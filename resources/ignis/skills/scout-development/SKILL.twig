@@ -1,0 +1,203 @@
+---
+name: explorator-development
+description: "Develops full-text search with Crustum Explorator for CakePHP. Activates when installing or configuring Explorator; choosing a search engine (Algolia, Meilisearch, Typesense, Database, Collection); adding SearchableTrait / Searchable behavior to Tables; customizing toSearchableArray or searchableAs; importing or flushing search indexes; writing search queries with where clauses, pagination, or soft deletes; configuring index settings; troubleshooting search results; or when the user mentions Explorator, full-text search, search indexing, or search engines in a CakePHP project. Use this skill whenever the user works with Explorator search functionality, even if they don't explicitly name the package."
+license: MIT
+metadata:
+  author: crustum
+---
+# CakePHP Explorator Full-Text Search
+
+## Documentation First
+
+Prefer Explorator package docs (`docs/index.md`) and Ignis project guidelines before inventing APIs. This skill orients you — the docs hold engine-specific details.
+
+Effective doc anchors:
+
+- Installation & setup / queueing
+- Engines: Algolia, Meilisearch, Typesense, Database, Collection
+- Table configuration: searchable data, index names
+- Searching: where clauses, pagination, soft deletes
+- Indexing: batch import, queue-import, flush
+- Advanced: custom engines, soft delete (`deleted` column)
+- Testing: `ExploratorTrait` / `TestEngine`, index + search asserts (queue asserts → cakephp/queue `QueueTrait`)
+
+## When to Apply
+
+Activate this skill when:
+
+- Installing or configuring Explorator
+- Choosing a search engine for a CakePHP application
+- Making Tables/Entities searchable
+- Customizing indexed data or index names
+- Writing search queries, filters, or pagination
+- Importing or flushing search indexes
+- Writing PHPUnit tests for indexing or search (use `ExploratorTrait`)
+- Troubleshooting search results or indexing issues
+
+## Installation
+
+Before installing, check if Explorator is already in the project — look for `crustum/explorator` in `composer.json` and `config/explorator.php` / `Configure::read('Explorator')`. If already installed, skip to engine configuration, Table setup, or searching.
+
+### 1. Install Explorator
+
+```bash
+composer require crustum/explorator
+```
+
+```bash
+{{ assist.cakeCommand('plugin load Crustum/Explorator') }}
+{{ assist.cakeCommand('manifest install --plugin Crustum/Explorator') }}
+```
+
+Creates / loads `config/explorator.php` (`Configure::read('Explorator.*')`). Environment variables use the `EXPLORATOR_*` prefix.
+
+### 2. Add SearchableTrait + Behavior
+
+Handy API lives on the **Table trait**. The Behavior is **events-only** (auto-index on save/delete).
+
+@ignissnippet("Searchable Table setup", "php")
+namespace App\Model\Table;
+
+use Cake\ORM\Table;
+use Crustum\Explorator\Model\Trait\SearchableTrait;
+
+class PostsTable extends Table
+{
+    use SearchableTrait;
+
+    public function initialize(array $config): void
+    {
+        parent::initialize($config);
+
+        $this->addBehavior('Crustum/Explorator.Searchable');
+    }
+}
+@endignissnippet
+
+Manual-index-only tables: use the trait **without** the Behavior.
+
+## Choosing an Engine
+
+Before presenting engine options, check if Explorator is already configured:
+
+1. Check `.env` for `EXPLORATOR_DRIVER` — if set, the application already has a configured engine.
+2. Check `config/explorator.php` / `Configure::read('Explorator.driver')` and engine-specific settings.
+3. Check `composer.json` for engine SDKs (`algolia/algoliasearch-client-php`, `meilisearch/meilisearch-php`, `typesense/typesense-php`).
+
+If an engine is already configured, skip engine selection and work with the existing setup. Only present the comparison if Explorator is not yet installed or the user explicitly wants to switch engines.
+
+When no engine is configured, present these options and let the user decide — never choose for them.
+
+| Engine | Type | Best For | Tradeoffs |
+|--------|------|----------|-----------|
+| **Database** | Built-in | Typical applications, simple search | No external deps. MySQL/PostgreSQL. LIKE + full-text. No typo tolerance. |
+| **Collection** | Built-in | Local dev, tiny datasets (<500 records) | Loads records into memory. Most portable, least efficient. |
+| **Algolia** | Hosted SaaS | Advanced search without managing infra | Typo tolerance, analytics, faceting. Paid. No self-hosting. |
+| **Meilisearch** | Self-hosted / Cloud | Teams wanting infrastructure control | Fast, open-source. Requires filterable attribute config. |
+| **Typesense** | Self-hosted / Cloud | Keyword, semantic, geo, vector search | Open-source. Strict schema requirements. |
+
+Set the engine in `.env`:
+
+```ini
+EXPLORATOR_DRIVER=database
+```
+
+For third-party engines: install their PHP SDK and strongly consider enabling `Explorator.queue` in production.
+
+## Table / Entity Configuration
+
+Key customization points (entity for payload; Table for index name / explorator key):
+
+@ignissnippet("toSearchableArray + searchableAs", "php")
+// Entity — control what data gets indexed
+public function toSearchableArray(): array
+{
+    return [
+        'id' => $this->id,
+        'title' => $this->title,
+        'body' => $this->body,
+    ];
+}
+
+// Table — custom index name (no effect with database engine)
+public function searchableAs(): string
+{
+    return 'posts_index';
+}
+@endignissnippet
+
+For Algolia/Meilisearch/Typesense: configure index settings (filterable, sortable, searchable attributes) in `config/explorator.php`, then sync:
+
+```bash
+{{ assist.cakeCommand('explorator sync-index-settings') }}
+```
+
+## Searching
+
+`$table->search($q)` returns a **`Crustum\Explorator\Builder`** (not a Cake ORM `SelectQuery`). Terminate with `get()` / `first()` / `paginate()` / `raw()` / `keys()`.
+
+@ignissnippet("Explorator search patterns", "php")
+$results = $this->Posts->search('query')->get();
+
+$results = $this->Posts->search('query')->where('status', 'active')->get();
+
+$results = $this->Posts->search('query')->paginate(15);
+
+$results = $this->Posts->search('query')
+    ->query(fn ($q) => $q->contain(['Categories']))
+    ->get();
+
+$raw = $this->Posts->search('query')->raw();
+@endignissnippet
+
+Use docs for `whereIn`, `whereNotIn`, soft deletes, custom indexes, and engine-specific options.
+
+## Indexing
+
+@ignissnippet("Import / remove", "php")
+$this->Posts->importSearchable(
+    $this->Posts->find()->where(['published' => true]),
+);
+
+$this->Posts->makeSearchable($entities);
+$this->Posts->removeFromSearch($entities);
+$this->Posts->flushSearchable();
+@endignissnippet
+
+## Key Cake Console Commands
+
+| Command | Purpose |
+|---------|---------|
+| `{{ assist.cakeCommand('explorator import Posts') }}` | Import table records (`--fresh`, `--chunk`) |
+| `{{ assist.cakeCommand('explorator queue-import Posts') }}` | Queued range jobs (`--chunk`, `--min`, `--max`, `--order`, `--queue`) |
+| `{{ assist.cakeCommand('explorator flush Posts') }}` | Remove all table records from search index |
+| `{{ assist.cakeCommand('explorator sync-index-settings') }}` | Sync index settings (`--driver`) |
+| `{{ assist.cakeCommand('explorator index posts') }}` | Create a search index (`--key`) |
+| `{{ assist.cakeCommand('explorator delete-index posts') }}` | Delete a search index |
+| `{{ assist.cakeCommand('explorator delete-all-indexes') }}` | Delete all indexes (engine-dependent) |
+
+## Soft Deletes
+
+Explorator soft-delete uses column **`deleted`** (nullable datetime) via `Crustum/Explorator.SoftDelete` behavior + `SoftDeleteTrait` — not Eloquent `deleted_at`.
+
+Enable `Explorator.soft_delete` in config. Search helpers: `->withTrashed()`, `->onlyTrashed()`.
+
+## Testing
+
+Use `Crustum\Explorator\TestSuite\ExploratorTrait` on the test case: it forces `Explorator.driver=test` (`TestEngine`) and captures index writes / searches for assertions. Soft delete is an **update** with `__soft_deleted=1` (not `assertRemovedFromSearch`). Queue jobs use `Cake\Queue\TestSuite\QueueTrait`. Without capture, `null` / `collection` drivers or `withoutSyncingToSearch` / `SearchableBehavior::disableSyncingFor` still apply.
+
+Asserts: `assertIndexed`, `assertUpdatedInSearch`, `assertIndexedAt`, `assertIndexedTimes`, `assertNotIndexed`, `assertRemovedFromSearch`, `assertFlushed`, `assertNothingWritten`, `assertWriteCount`, `assertIndexedPayloadContains`, `assertSearchPerformed`, `assertSearchNotPerformed`, `assertSearchCount`.
+
+Inspect: `getExploratorOperations`, `getExploratorWrites`, `getExploratorSearches`, `getExploratorOperationsForTable`.
+
+## Common Pitfalls
+
+- **Meilisearch filterable attributes** — configure filterable attributes under `Explorator.meilisearch.index-settings` and run `explorator sync-index-settings` **before** using `where` / `whereIn` / `whereNotIn`. Without this, filtering silently returns wrong results.
+- **Meilisearch data type casting** — `toSearchableArray()` must return properly cast values: integers as `(int)`, floats as `(float)`. Wrong types cause silent filter failures.
+- **Database engine limitations** — `searchableAs()`, `getExploratorKey()`, `getExploratorKeyName()`, and `shouldBeSearchable()` have no effect with the database engine. It queries your actual tables directly.
+- **Finder scopes are not search filters** — search engines are not aware of Cake finder scopes. Recreate constraints with Explorator `where*` clauses.
+- **`query()` is not for filtering** — with third-party engines, the `query()` callback runs after results are retrieved (contain/select). Use Explorator `where*` for filtering.
+- **Missing queue configuration** — third-party engines should have `Explorator.queue` enabled in production.
+- **Typesense schema requirements** — `id` must be cast as `(string)` and timestamps as Unix integers.
+- **`shouldBeSearchable()` bypass** — applies via save/delete/import paths; calling `makeSearchable()` directly can bypass it depending on the call site.
+- **TestSuite** — host index/search asserts via `ExploratorTrait`; queue via cakephp/queue `QueueTrait`. Soft delete → payload `__soft_deleted`, not remove assert.

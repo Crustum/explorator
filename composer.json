@@ -1,0 +1,100 @@
+{
+    "name": "crustum/explorator",
+    "description": "CakePHP Explorator provides a driver based solution to searching your Tables and Entities",
+    "type": "cakephp-plugin",
+    "license": "MIT",
+    "keywords": [
+        "cakephp",
+        "explorator",
+        "search",
+        "algolia",
+        "meilisearch",
+        "typesense"
+    ],
+    "authors": [
+        {
+            "name": "Evgeny Tomenko",
+            "homepage": "https://github.com/skie"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "cakephp/cakephp": "^5.3",
+        "cakephp/queue": "^2.3",
+        "symfony/polyfill-php84": "^1.31",
+        "crustum/plugin-manifest": "^1.0"
+    },
+    "require-dev": {
+        "cakephp/bake": "^3.0",
+        "phpunit/phpunit": "^11.1.3 || ^12.5.0",
+        "crustum/essentia": "^1.0",
+        "cakephp/cakephp-codesniffer": "^5.0",
+        "phpstan/phpstan": "^2.2.2,<2.2.6",
+        "rector/rector": "^2.5",
+        "mockery/mockery": "^1.6",
+        "algolia/algoliasearch-client-php": "^4.14",
+        "meilisearch/meilisearch-php": "^1.0",
+        "guzzlehttp/guzzle": "^7.15.1",
+        "typesense/typesense-php": "^4.9.3",
+        "vierge-noire/cakephp-fixture-factories": "^3.0"
+    },
+    "suggest": {
+        "algolia/algoliasearch-client-php": "Required to use the Algolia engine (^4.14).",
+        "meilisearch/meilisearch-php": "Required to use the Meilisearch engine (^1.0).",
+        "guzzlehttp/guzzle": "PSR-18 HTTP client for live Meilisearch / Typesense HTTP APIs (^7.15).",
+        "typesense/typesense-php": "Required to use the Typesense engine (^4.9)."
+    },
+    "conflict": {
+        "algolia/algoliasearch-client-php": "<4.14.0|>=5.0.0",
+        "ramsey/uuid": "<4.7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Crustum\\Explorator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TestApp\\": "tests/TestApp/",
+            "Crustum\\Explorator\\Test\\": "tests/"
+        }
+    },
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@rector-check",
+            "@test",
+            "@analyse"
+        ],
+        "fix": [
+            "@cs-fix",
+            "@rector-fix",
+            "@cs-fix",
+            "@analyse"
+        ],
+        "analyse": [
+            "@stan"
+        ],
+        "cs-check": "phpcs -p --standard=phpcs.xml src/ tests/",
+        "cs-fix": "phpcbf --standard=phpcs.xml src/ tests/",
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite=Unit",
+        "test:integration": "phpunit --testsuite=Integration",
+        "rector-check": "vendor/bin/rector process --dry-run",
+        "rector-fix": "vendor/bin/rector process",
+        "stan": "phpstan analyse src/",
+        "stan-baseline": "phpstan analyse --generate-baseline"
+    },
+    "extra": {
+        "installer-name": "Explorator"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "php-http/discovery": false
+        },
+        "platform-check": false
+    }
+}
