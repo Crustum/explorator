@@ -119,10 +119,14 @@ class DatabaseEngine extends Engine
      */
     protected function buildSearchQuery(Builder $builder): SelectQuery
     {
-        $columns = array_keys($this->searchableArray($builder));
+        $columns = array_filter(
+            array_keys($this->searchableArray($builder)),
+            fn(string $column): bool => str_contains($column, '.')
+                || $builder->table->getSchema()->hasColumn($column),
+        );
         $query = $this->initializeSearchQuery(
             $builder,
-            $columns,
+            array_values($columns),
             $this->getPrefixColumns($builder),
             $this->getFullTextColumns($builder),
         );
@@ -372,10 +376,15 @@ class DatabaseEngine extends Engine
         $vectors = new QueryExpression([], [], ' || ');
 
         foreach ($qualifiedColumns as $column) {
-            $vectors->add(new FunctionExpression('to_tsvector', [
-                $language,
-                $column => 'identifier',
-            ], ['string']));
+            $vectors->add(
+                new FunctionExpression('coalesce', [
+                    new FunctionExpression('to_tsvector', [
+                        $language,
+                        $column => 'identifier',
+                    ], ['string']),
+                    '',
+                ], ['string']),
+            );
         }
 
         return $vectors;

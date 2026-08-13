@@ -14,6 +14,7 @@ return [
             'name' => ['type' => 'string', 'length' => 255, 'null' => false],
             'email' => ['type' => 'string', 'length' => 255, 'null' => false],
             'age' => ['type' => 'integer', 'null' => true, 'default' => null],
+            'bio' => ['type' => 'text', 'null' => true, 'default' => null],
             'created' => ['type' => 'datetime', 'null' => true, 'default' => null],
             'modified' => ['type' => 'datetime', 'null' => true, 'default' => null],
             'deleted' => ['type' => 'datetime', 'null' => true, 'default' => null],

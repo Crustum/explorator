@@ -25,6 +25,10 @@ jobs:
             dependencies: lowest
             quote-identifiers: 'false'
           - php-version: '8.2'
+            db-type: 'pgsql'
+            dependencies: highest
+            quote-identifiers: 'false'
+          - php-version: '8.2'
             db-type: 'sqlite'
             dependencies: highest
             quote-identifiers: 'false'
@@ -34,6 +38,10 @@ jobs:
             quote-identifiers: 'false'
           - php-version: '8.3'
             db-type: 'pgsql'
+            dependencies: highest
+            quote-identifiers: 'false'
+          - php-version: '8.3'
+            db-type: 'sqlite'
             dependencies: highest
             quote-identifiers: 'false'
           - php-version: '8.4'

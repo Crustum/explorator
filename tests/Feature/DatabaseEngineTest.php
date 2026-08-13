@@ -8,6 +8,7 @@ use Cake\Datasource\ConnectionManager;
 use Cake\I18n\DateTime;
 use Crustum\Explorator\Model\Behavior\SearchableBehavior;
 use TestApp\Model\Entity\AttributeSearchableUser;
+use TestApp\Model\Entity\TwoColumnFullTextUser;
 use TestApp\Model\Table\BookmarksTable;
 use TestApp\Model\Table\ChirpsTable;
 use TestApp\Model\Table\SearchableUsersTable;
@@ -379,6 +380,46 @@ class DatabaseEngineTest extends FeatureTestCase
         $this->assertCount(1, $models);
         $this->assertSame('sample-label', $models->first()->label);
         $this->assertSame('This chirp is searchable', $models->first()->chirp->content);
+    }
+
+    /**
+     * Postgres full-text must coalesce the tsvector expression so a NULL
+     * full-text column (`to_tsvector(lang, NULL)` = NULL) does not poison the
+     * `||` sum — `NULL @@ tsquery` never matches. Only relevant on Postgres;
+     * skipped on SQLite/MySQL where the database engine falls back to LIKE.
+     *
+     * @return void
+     */
+    public function testFullTextCoalescesNullableColumns(): void
+    {
+        $this->skipUnlessPostgres();
+
+        $table = new SearchableUsersTable([
+            'alias' => 'TwoColumnFullTextUsers',
+            'table' => 'searchable_users',
+            'connection' => ConnectionManager::get('test'),
+        ]);
+        $table->setEntityClass(TwoColumnFullTextUser::class);
+        $this->getTableLocator()->set('TwoColumnFullTextUsers', $table);
+
+        $table->search('alex')->query(function ($query): void {
+            $sql = (string)$query->sql();
+            $this->assertStringContainsString('to_tsvector', $sql, 'Postgres full-text should be used');
+            $this->assertStringContainsString('coalesce', $sql, 'tsvector columns must be coalesced');
+        })->get();
+    }
+
+    /**
+     * Skip the current test unless the test connection is Postgres.
+     *
+     * @return void
+     */
+    private function skipUnlessPostgres(): void
+    {
+        $driver = ConnectionManager::get('test')->getDriver();
+        if (!str_contains($driver::class, 'Postgres')) {
+            $this->markTestSkipped('Postgres-only: database full-text (to_tsvector) requires Postgres.');
+        }
     }
 
     /**

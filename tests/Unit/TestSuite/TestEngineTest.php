@@ -11,6 +11,7 @@ use Crustum\Explorator\EngineManager;
 use Crustum\Explorator\SearchableIndexer;
 use Crustum\Explorator\Test\Feature\FeatureTestCase;
 use Crustum\Explorator\TestSuite\TestEngine;
+use Crustum\Explorator\TestSuite\TestIndex;
 use PHPUnit\Framework\Attributes\UsesClass;
 use TestApp\Model\Entity\SearchableUser;
 
@@ -225,6 +226,77 @@ class TestEngineTest extends FeatureTestCase
         $this->assertCount(2, TestEngine::getWrites());
         $this->assertCount(1, TestEngine::getSearches());
         $this->assertCount(3, TestEngine::getOperations());
+    }
+
+    /**
+     * setSearchResults stubs the raw hits returned by search()/paginate().
+     *
+     * @return void
+     */
+    public function testSetSearchResultsStubsRawHits(): void
+    {
+        $table = $this->getTableLocator()->get('SearchableUsers');
+        $engine = (new EngineManager())->engine();
+
+        TestEngine::setSearchResults([
+            ['id' => 7, 'name' => 'Ada', '_rankingScore' => 0.9],
+            ['id' => 8, 'name' => 'Grace', '_rankingScore' => 0.8],
+        ]);
+
+        $result = $engine->search(new Builder($table, 'ada'));
+
+        $this->assertSame([
+            ['id' => 7, 'name' => 'Ada', '_rankingScore' => 0.9],
+            ['id' => 8, 'name' => 'Grace', '_rankingScore' => 0.8],
+        ], $result);
+        $this->assertCount(1, TestEngine::getSearches());
+    }
+
+    /**
+     * clearSearchResults resets the stub so search() returns an empty list.
+     *
+     * @return void
+     */
+    public function testClearSearchResultsResetsStub(): void
+    {
+        $table = $this->getTableLocator()->get('SearchableUsers');
+        $engine = (new EngineManager())->engine();
+
+        TestEngine::setSearchResults([['id' => 1, 'name' => 'Ada']]);
+        TestEngine::clearSearchResults();
+
+        $this->assertSame([], $engine->search(new Builder($table, 'ada')));
+    }
+
+    /**
+     * A Builder callback (engine-specific index) is executed against the stub
+     * results, so searchable tables with a callback run end-to-end.
+     *
+     * @return void
+     */
+    public function testSearchInvokesBuilderCallbackWithStubbedIndex(): void
+    {
+        $table = $this->getTableLocator()->get('SearchableUsers');
+        $engine = (new EngineManager())->engine();
+
+        TestEngine::setSearchResults([
+            ['id' => 7, 'name' => 'Ada'],
+            ['id' => 8, 'name' => 'Grace'],
+        ]);
+
+        $builder = new Builder($table, 'ada', function ($index, string $query, array $params): array {
+            $this->assertInstanceOf(TestIndex::class, $index);
+            $this->assertSame('ada', $query);
+
+            return $index->rawSearch($query, $params);
+        });
+
+        $result = $engine->search($builder);
+
+        $this->assertSame([
+            ['id' => 7, 'name' => 'Ada'],
+            ['id' => 8, 'name' => 'Grace'],
+        ], $result['hits']);
     }
 
     /**

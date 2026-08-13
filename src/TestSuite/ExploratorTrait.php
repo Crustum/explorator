@@ -58,6 +58,7 @@ trait ExploratorTrait
         $this->exploratorPreviousDriver = Configure::read('Explorator.driver');
         Configure::write('Explorator.driver', 'test');
         TestEngine::clearOperations();
+        TestEngine::clearSearchResults();
     }
 
     /**
@@ -69,6 +70,7 @@ trait ExploratorTrait
     public function cleanupExploratorTrait(): void
     {
         TestEngine::clearOperations();
+        TestEngine::clearSearchResults();
 
         if ($this->exploratorPreviousDriver === null) {
             Configure::delete('Explorator.driver');

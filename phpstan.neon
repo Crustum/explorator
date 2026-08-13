@@ -1,7 +1,10 @@
 includes:
     - phpstan-baseline.neon
+    - vendor/cakedc/cakephp-phpstan/extension.neon
 
 parameters:
+    cakeDC:
+        appNamespace: Crustum\Explorator
     level: 5
     paths:
         - src

@@ -6,6 +6,7 @@ namespace Crustum\Explorator\TestSuite;
 use Cake\Datasource\EntityInterface;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
+use Closure;
 use Crustum\Explorator\Builder;
 use Crustum\Explorator\Engines\NullEngine;
 use Override;
@@ -43,6 +44,13 @@ class TestEngine extends NullEngine
     protected static array $operations = [];
 
     /**
+     * Stubbed raw search results returned by {@see search()} / {@see paginate()}.
+     *
+     * @var list<array<string, mixed>>
+     */
+    protected static array $searchResults = [];
+
+    /**
      * @inheritDoc
      */
     public function update(iterable $entities): void
@@ -66,7 +74,11 @@ class TestEngine extends NullEngine
     {
         $this->recordSearch('search', $builder);
 
-        return [];
+        if ($builder->callback instanceof Closure) {
+            return ($builder->callback)(new TestIndex(self::$searchResults), $builder->query, $builder->options);
+        }
+
+        return self::$searchResults;
     }
 
     /**
@@ -77,7 +89,32 @@ class TestEngine extends NullEngine
     {
         $this->recordSearch('paginate', $builder);
 
-        return [];
+        if ($builder->callback instanceof Closure) {
+            return ($builder->callback)(new TestIndex(self::$searchResults), $builder->query, $builder->options);
+        }
+
+        return self::$searchResults;
+    }
+
+    /**
+     * Stub the raw results returned by search() / paginate().
+     *
+     * @param list<array<string, mixed>> $hits Raw hits (e.g. Meilisearch-shaped rows)
+     * @return void
+     */
+    public static function setSearchResults(array $hits): void
+    {
+        self::$searchResults = $hits;
+    }
+
+    /**
+     * Reset stubbed search results to empty.
+     *
+     * @return void
+     */
+    public static function clearSearchResults(): void
+    {
+        self::$searchResults = [];
     }
 
     /**
