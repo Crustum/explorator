@@ -10,6 +10,7 @@
     - [Algolia](#algolia)
     - [Meilisearch](#meilisearch)
     - [Typesense](#typesense)
+    - [Turbopuffer](#turbopuffer)
 - [Configuration](#configuration)
     - [Configuring Searchable Data](#configuring-searchable-data)
     - [Configuring Table Engines](#configuring-table-engines)
@@ -21,6 +22,7 @@
     - [Algolia](#algolia-configuration)
     - [Meilisearch](#meilisearch-configuration)
     - [Typesense](#typesense-configuration)
+    - [Turbopuffer](#turbopuffer-configuration)
 - [Third-Party Engine Indexing](#indexing)
     - [Batch Import](#batch-import)
     - [Adding Records](#adding-records)
@@ -30,6 +32,7 @@
     - [Conditionally Searchable Entities](#conditionally-searchable-entities)
 - [Searching](#searching)
     - [Where Clauses](#where-clauses)
+    - [Semantic Search](#semantic-search)
     - [Pagination](#pagination)
     - [Soft Deleting](#soft-deleting)
     - [Customizing Engine Searches](#customizing-engine-searches)
@@ -55,7 +58,7 @@
 
 Explorator ships with a built-in `database` engine that uses MySQL / PostgreSQL full-text indexes and `LIKE` clauses to search your existing database — no external service required. For most applications, this is all you need.
 
-Explorator also includes drivers for [Algolia](https://www.algolia.com/), [Meilisearch](https://www.meilisearch.com), and [Typesense](https://typesense.org) when you need features like typo tolerance, faceted filtering, or geo-search at massive scale. A `collection` driver is also available for local development and testing, and you are free to write [custom engines](#custom-engines) as well.
+Explorator also includes drivers for [Algolia](https://www.algolia.com/), [Meilisearch](https://www.meilisearch.com), [Typesense](https://typesense.org), and [Turbopuffer](https://turbopuffer.com) when you need features like typo tolerance, faceted filtering, vector search, or geo-search at massive scale. A `collection` driver is also available for local development and testing, and you are free to write [custom engines](#custom-engines) as well.
 
 <a name="installation"></a>
 ## Installation
@@ -232,6 +235,27 @@ To specify the connection and queue that Explorator jobs utilize, you may define
 
 If you customize the connection and queue, run a queue worker for that connection and queue name.
 
+To apply default push options (`delay` / `expires` in seconds, `priority`) to every queued Explorator job, define them under `Explorator.jobs.options`. Per-push options always win over these defaults:
+
+```php
+'jobs' => [
+    'options' => [
+        'delay' => 30,
+        'expires' => 3600,
+        'priority' => null,
+    ],
+],
+```
+
+Job retries are not push options: control them with the `$maxAttempts` property on custom job classes or the worker `--max-attempts` option.
+
+Explorator also ships unique job variants (`MakeSearchableUniquelyJob`, `RemoveFromSearchUniquelyJob`) that deduplicate identical queued payloads. Select them via `Explorator::makeSearchableUsing()` / `Explorator::removeFromSearchUsing()`. Unique jobs require `uniqueCache` in the CakePHP Queue configuration, otherwise pushing them throws:
+
+```php
+// In config/queue.php...
+'uniqueCache' => ['className' => 'File', 'path' => CACHE . 'queue_unique' . DS],
+```
+
 You may also set `Explorator.after_commit` to `true` so index sync runs after the database transaction commits successfully.
 
 <a name="waiting-for-engine-tasks"></a>
@@ -310,6 +334,19 @@ TYPESENSE_PROTOCOL=http
 
 Additional settings and schema definitions for your Typesense collections can be found within your application's Explorator configuration under `Explorator.typesense`. For more information regarding Typesense, please consult the [Typesense documentation](https://typesense.org/docs/guide/#quick-start).
 
+<a name="turbopuffer"></a>
+### Turbopuffer
+
+[Turbopuffer](https://turbopuffer.com) is a search engine that supports full-text, semantic, and hybrid search. To use the Turbopuffer driver, set the `EXPLORATOR_DRIVER` environment variable and provide your Turbopuffer API key:
+
+```ini
+EXPLORATOR_DRIVER=turbopuffer
+TURBOPUFFER_API_KEY=tpuf_...
+TURBOPUFFER_REGION=gcp-us-central1
+```
+
+The `TURBOPUFFER_REGION` environment variable is optional and defaults to `gcp-us-central1`.
+
 <a name="configuration"></a>
 ## Configuration
 
@@ -360,7 +397,7 @@ namespace App\Model\Table;
 
 use Cake\ORM\Table;
 use Crustum\Explorator\EngineManager;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 use Crustum\Explorator\Model\Trait\SearchableTrait;
 
 class UsersTable extends Table
@@ -370,7 +407,7 @@ class UsersTable extends Table
     /**
      * Get the engine used to index the table.
      *
-     * @return \Crustum\Explorator\Engines\Engine
+     * @return \Crustum\Explorator\Engine\Engine
      */
     public function searchableUsing(): Engine
     {
@@ -397,6 +434,20 @@ EXPLORATOR_DRIVER=database
 ```
 
 Once configured, you may [define your searchable data](#configuring-searchable-data) and start [executing search queries](#searching) against your tables. Unlike third-party engines, the database engine requires no separate indexing step — it searches your database tables directly.
+
+<a name="database-semantic-and-hybrid-search"></a>
+#### Semantic and Hybrid Search
+
+The database engine supports semantic and hybrid search when using PostgreSQL with the `pgvector` extension. To get started, enable the extension and add a nullable vector column and a full-text index to your table. The vector column must be nullable because Explorator stores the embedding after the entity has been persisted:
+
+```php
+// In a migration...
+$this->execute('CREATE EXTENSION IF NOT EXISTS vector');
+$this->execute('ALTER TABLE articles ADD COLUMN embedding vector(1536) NULL');
+$this->execute('CREATE INDEX articles_title_body_idx ON articles USING gin (to_tsvector(\'english\', title || \' \' || body))');
+```
+
+Next, define a `toSearchableEmbedding` method on the entity. This method may return the source text that Explorator should embed or a precomputed embedding array. Explorator stores embeddings in the `embedding` column by default; to use another column, define a `searchableEmbeddingColumn` method on the table.
 
 For the database engine, the keys returned by `toSearchableArray()` are used as SQL column references in the search `WHERE` clause. Unqualified keys (for example `label`) are prefixed with the searching table's alias. If you search across a joined association (via `newExploratorQuery()`), use the **association alias** in the key — the same alias that appears in the query join — not the physical table name:
 
@@ -637,6 +688,37 @@ After configuring your application's index settings, you must invoke the `explor
 bin/cake explorator sync-index-settings
 ```
 
+<a name="meilisearch-semantic-and-hybrid-search"></a>
+#### Semantic and Hybrid Search
+
+To use semantic or hybrid search with Meilisearch, configure an embedder in the index settings and embedding settings for each searchable table:
+
+```php
+'meilisearch' => [
+    // ...
+    'index-settings' => [
+        \App\Model\Table\ArticlesTable::class => [
+            'embedders' => [
+                'default' => [
+                    'source' => 'userProvided',
+                    'dimensions' => 1536,
+                ],
+            ],
+        ],
+    ],
+    'model-settings' => [
+        \App\Model\Table\ArticlesTable::class => [
+            'embedding' => [
+                'embedder' => 'default',
+                'dimensions' => 1536,
+            ],
+        ],
+    ],
+],
+```
+
+The entity's `toSearchableEmbedding` method may return source text, which Explorator embeds using the `crustum/cakephp-ai` package, or a precomputed embedding array. After updating the configuration, run the `explorator sync-index-settings` command.
+
 <a name="meilisearch-data-types"></a>
 #### Searchable Data Types
 
@@ -697,6 +779,38 @@ If your searchable table uses Explorator soft delete, you should define a `__sof
 ],
 ```
 
+<a name="typesense-embeddings"></a>
+#### Embeddings
+
+To enable semantic and hybrid search, define an `embedding` setting and vector field in the table's Typesense configuration. By default, Explorator uses the `crustum/cakephp-ai` package to generate embeddings:
+
+```php
+'model-settings' => [
+    \App\Model\Table\ArticlesTable::class => [
+        'collection-schema' => [
+            'fields' => [
+                ['name' => 'title', 'type' => 'string'],
+                ['name' => 'embedding', 'type' => 'float[]', 'num_dim' => 1536],
+            ],
+        ],
+        'search-parameters' => ['query_by' => 'title'],
+        'embedding' => [
+            'attribute' => 'embedding',
+            'dimensions' => 1536,
+        ],
+    ],
+],
+```
+
+Your entity's `toSearchableEmbedding` method should return the source text that Explorator should embed or a precomputed embedding array:
+
+```php
+public function toSearchableEmbedding(): string|array
+{
+    return $this->title . ' ' . $this->body;
+}
+```
+
 <a name="typesense-dynamic-search-parameters"></a>
 #### Dynamic Search Parameters
 
@@ -710,11 +824,87 @@ $results = $this->Todos->search('Groceries')
     ->get();
 ```
 
+<a name="turbopuffer-configuration"></a>
+### Turbopuffer
+
+Turbopuffer requires a schema and searchable attributes for each table. Define them in the `model-settings` array of your `turbopuffer` configuration within the Explorator configuration file:
+
+```php
+'turbopuffer' => [
+    // ...
+    'model-settings' => [
+        \App\Model\Table\ArticlesTable::class => [
+            'searchable-attributes' => [
+                'title' => 3,
+                'body' => 1,
+            ],
+            'schema' => [
+                'title' => ['type' => 'string', 'full_text_search' => true],
+                'body' => ['type' => 'string', 'full_text_search' => true],
+                'status' => ['type' => 'string'],
+            ],
+        ],
+    ],
+],
+```
+
+The numeric values assigned to `searchable-attributes` are relative BM25 weights. In the example above, matches in the article title contribute three times the score of matches in the body.
+
+To enable semantic and hybrid search, add an `embedding` setting and vector schema to the table's configuration:
+
+```php
+'turbopuffer' => [
+    // ...
+    'model-settings' => [
+        \App\Model\Table\ArticlesTable::class => [
+            'searchable-attributes' => [
+                'title' => 3,
+                'body' => 1,
+            ],
+            'embedding' => [
+                'attribute' => 'embedding',
+                'dimensions' => 1536,
+            ],
+            'schema' => [
+                'title' => ['type' => 'string', 'full_text_search' => true],
+                'body' => ['type' => 'string', 'full_text_search' => true],
+                'embedding' => ['type' => '[1536]f32', 'ann' => true],
+            ],
+        ],
+    ],
+],
+```
+
+Your entity's `toSearchableEmbedding` method should return the source text that Explorator should embed or a precomputed embedding array. Explorator generates source-text embeddings using the `crustum/cakephp-ai` package.
+
+Alternatively, you may use Turbopuffer's native embeddings without installing the `crustum/cakephp-ai` package or defining a `toSearchableEmbedding` method. Set the embedding driver to `turbopuffer` and configure an `embed` schema on the searchable source attribute:
+
+```php
+'embedding' => [
+    'driver' => 'turbopuffer',
+    'attribute' => 'embedding_text',
+],
+
+'schema' => [
+    // ...
+    'embedding_text' => [
+        'type' => 'string',
+        'embed' => [
+            'model' => 'voyage/voyage-4',
+            'dimensions' => 1024,
+            'attribute' => 'embedding',
+        ],
+    ],
+],
+```
+
+The source attribute must be included in the entity's `toSearchableArray` output.
+
 <a name="indexing"></a>
 ## Third-Party Engine Indexing
 
 > [!NOTE]
-> The indexing features described in this section are primarily relevant when using a third-party engine (Algolia, Meilisearch, or Typesense). The database engine searches your database tables directly, so it does not require manual index management.
+> The indexing features described in this section are primarily relevant when using a third-party engine (Algolia, Meilisearch, Typesense, or Turbopuffer). The database engine searches your database tables directly, so it does not require manual index management.
 
 <a name="batch-import"></a>
 ### Batch Import
@@ -936,6 +1126,35 @@ public function search(): \Cake\Http\Response
 }
 ```
 
+<a name="semantic-search"></a>
+### Semantic Search
+
+The database, Meilisearch, Typesense, and Turbopuffer engines support semantic search, which matches records based on the meaning of a query. When Explorator generates embeddings, semantic and hybrid searches require the `crustum/cakephp-ai` package. [Typesense's native embeddings](#typesense-embeddings), [Turbopuffer's native embeddings](#turbopuffer-configuration), and precomputed query vectors do not require the `crustum/cakephp-ai` package.
+
+After configuring embeddings for the selected engine, invoke the `semantic` method on a search query:
+
+```php
+$articles = $this->Articles->search('staying cool in the summer')
+    ->semantic()
+    ->get();
+```
+
+You may provide a minimum similarity threshold when supported by the selected engine:
+
+```php
+$articles = $this->Articles->search('renewable energy storage')
+    ->semantic(minSimilarity: 0.6)
+    ->get();
+```
+
+To combine full-text and semantic search, use the `hybrid` method. Its first two arguments control the relative weights of text and semantic results:
+
+```php
+$articles = $this->Articles->search('renewable energy storage')
+    ->hybrid(textWeight: 1, semanticWeight: 2)
+    ->get();
+```
+
 <a name="custom-indexes"></a>
 #### Custom Indexes
 
@@ -1121,7 +1340,7 @@ $posts = $this->Posts->search(
 <a name="writing-the-engine"></a>
 #### Writing the Engine
 
-If one of the built-in Explorator search engines doesn't fit your needs, you may write your own custom engine and register it with Explorator. Your engine should extend the `Crustum\Explorator\Engines\Engine` abstract class. This abstract class contains methods your custom engine must implement:
+If one of the built-in Explorator search engines doesn't fit your needs, you may write your own custom engine and register it with Explorator. Your engine should extend the `Crustum\Explorator\Engine\Engine` abstract class. This abstract class contains methods your custom engine must implement:
 
 ```php
 use Cake\Collection\CollectionInterface;
@@ -1196,7 +1415,7 @@ bin/cake explorator queue-import Posts --min=1 --max=10000 --queue=search
 
 | Option | Description |
 |--------|-------------|
-| `--chunk` / `-c` | Primary-key range size per `MakeRangeSearchable` job |
+| `--chunk` / `-c` | Primary-key range size per `MakeRangeSearchableJob` job |
 | `--min` / `--max` | Limit the explorator key range |
 | `--order` | `asc` or `desc` (default `asc`) |
 | `--queue` | Queue name for the range jobs |

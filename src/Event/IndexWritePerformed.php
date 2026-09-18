@@ -7,7 +7,7 @@ use Cake\Datasource\EntityInterface;
 use Cake\Event\Event;
 use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 use Throwable;
 
 /**
@@ -40,7 +40,7 @@ class IndexWritePerformed extends Event
      * Build an IndexWritePerformed event from entities + engine result timing.
      *
      * @param iterable<\Cake\Datasource\EntityInterface> $entities Written entities
-     * @param \Crustum\Explorator\Engines\Engine $engine Engine that ran the write
+     * @param \Crustum\Explorator\Engine\Engine $engine Engine that ran the write
      * @param float $durationMs Duration in milliseconds
      * @param string $operation Operation name (`update` or `delete`)
      * @return self

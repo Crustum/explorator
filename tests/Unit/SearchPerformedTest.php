@@ -8,8 +8,8 @@ use Cake\ORM\ResultSet;
 use Cake\ORM\Table;
 use Cake\TestSuite\TestCase;
 use Crustum\Explorator\Builder;
-use Crustum\Explorator\Engines\Engine;
-use Crustum\Explorator\Engines\NullEngine;
+use Crustum\Explorator\Engine\Engine;
+use Crustum\Explorator\Engine\NullEngine;
 use Crustum\Explorator\Event\SearchPerformed;
 use Mockery as m;
 
@@ -35,7 +35,7 @@ class SearchPerformedTest extends TestCase
     {
         $table = new class (['alias' => 'Articles', 'table' => 'articles']) extends Table {
             /**
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             public function searchableUsing(): Engine
             {
@@ -95,7 +95,7 @@ class SearchPerformedTest extends TestCase
     {
         $table = new class (['alias' => 'Articles', 'table' => 'articles']) extends Table {
             /**
-             * @return \Crustum\Explorator\Engines\NullEngine
+             * @return \Crustum\Explorator\Engine\NullEngine
              */
             public function searchableUsing(): NullEngine
             {
@@ -127,7 +127,7 @@ class SearchPerformedTest extends TestCase
     {
         $table = new class (['alias' => 'Dummy']) extends Table {
             /**
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             public function searchableUsing(): Engine
             {
@@ -171,7 +171,7 @@ class SearchPerformedTest extends TestCase
     {
         $table = new class (['alias' => 'Dummy']) extends Table {
             /**
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             public function searchableUsing(): Engine
             {

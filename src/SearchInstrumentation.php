@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Crustum\Explorator;
 
 use Cake\Event\EventManager;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 use Crustum\Explorator\Event\SearchPerformed;
 use Throwable;
 
@@ -17,7 +17,7 @@ final class SearchInstrumentation
      * Run a search callback, measure duration, and fire SearchPerformed.
      *
      * @param \Crustum\Explorator\Builder $builder Search builder
-     * @param \Crustum\Explorator\Engines\Engine $engine Engine instance
+     * @param \Crustum\Explorator\Engine\Engine $engine Engine instance
      * @param callable(): mixed $callback Search callback returning raw results
      * @param string $operation Operation name (`search` or `paginate`)
      * @param int|null $page Page number when paginating

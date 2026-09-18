@@ -61,6 +61,60 @@ class CollectionEngineTest extends FeatureTestCase
     /**
      * @return void
      */
+    public function testItCanRetrieveResultsWithNullSearch(): void
+    {
+        $this->assertCount(2, $this->SearchableUsers->search(null)->get());
+    }
+
+    /**
+     * @return void
+     */
+    public function testItSearchesForWhitespaceLiterally(): void
+    {
+        $this->assertCount(0, $this->SearchableUsers->search('  ')->get());
+    }
+
+    /**
+     * @return void
+     */
+    public function testItCanRetrieveResultsForZero(): void
+    {
+        $user = $this->SearchableUsers->saveOrFail($this->SearchableUsers->newEntity([
+            'name' => 'Agent 0',
+            'email' => 'agent@example.com',
+            'created' => new DateTime('+3 days'),
+        ]));
+
+        $models = $this->SearchableUsers->search('0')->get();
+
+        $this->assertSame([$user->id], $models->extract('id')->toList());
+    }
+
+    /**
+     * @return void
+     */
+    public function testItCanPaginateResultsForZero(): void
+    {
+        $this->SearchableUsers->saveOrFail($this->SearchableUsers->newEntity([
+            'name' => 'Agent 0',
+            'email' => 'first@example.com',
+            'created' => new DateTime('+3 days'),
+        ]));
+        $second = $this->SearchableUsers->saveOrFail($this->SearchableUsers->newEntity([
+            'name' => 'Agent 00',
+            'email' => 'second@example.com',
+            'created' => new DateTime('+4 days'),
+        ]));
+
+        $page = $this->SearchableUsers->search('0')->orderBy('id')->paginate(1, 'page', 2);
+
+        $this->assertSame(2, $page->totalCount());
+        $this->assertSame($second->id, iterator_to_array($page->items())[0]->id);
+    }
+
+    /**
+     * @return void
+     */
     public function testItCanRetrieveResults(): void
     {
         $models = $this->SearchableUsers->search('Blake')->where('email', 'blake@example.test')->get();

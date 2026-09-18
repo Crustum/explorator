@@ -7,7 +7,7 @@ use Algolia\AlgoliaSearch\Api\SearchClient;
 use Cake\ORM\Table;
 use Cake\TestSuite\TestCase;
 use Crustum\Explorator\Builder;
-use Crustum\Explorator\Engines\Algolia4Engine;
+use Crustum\Explorator\Engine\Algolia4Engine;
 use Mockery as m;
 use TestApp\Model\Entity\SearchableUser;
 use TestApp\Model\Table\SearchableUsersTable;

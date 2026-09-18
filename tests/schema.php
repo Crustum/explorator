@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Test database schema for Explorator plugin tests.
  *
- * Mirrors workbench migrations: searchable users (+ age), chirps, bookmarks.
+ * Searchable users (+ age), chirps, bookmarks.
  * MySQL FULLTEXT on `name` supports SearchUsingFullText in DatabaseEngineTest.
  */
 return [

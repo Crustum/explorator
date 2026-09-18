@@ -8,8 +8,8 @@ use Cake\Core\Configure;
 use Cake\ORM\Query\SelectQuery;
 use Closure;
 use Crustum\Explorator\Builder;
+use Crustum\Explorator\Engine\Engine;
 use Crustum\Explorator\EngineManager;
-use Crustum\Explorator\Engines\Engine;
 use Crustum\Explorator\Model\Behavior\SearchableBehavior;
 use Crustum\Explorator\SearchableIndexer;
 
@@ -23,11 +23,11 @@ trait SearchableTrait
     /**
      * Start a Explorator search against this table.
      *
-     * @param string $query Search query
+     * @param string|null $query Search query
      * @param \Closure|null $callback Engine callback
      * @return \Crustum\Explorator\Builder
      */
-    public function search(string $query = '', ?Closure $callback = null): Builder
+    public function search(?string $query = '', ?Closure $callback = null): Builder
     {
         $softDelete = (bool)Configure::read('Explorator.soft_delete', false);
 
@@ -129,7 +129,7 @@ trait SearchableTrait
     /**
      * Resolve the Explorator engine for this table.
      *
-     * @return \Crustum\Explorator\Engines\Engine
+     * @return \Crustum\Explorator\Engine\Engine
      */
     public function searchableUsing(): Engine
     {

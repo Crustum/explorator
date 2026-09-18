@@ -6,7 +6,7 @@ namespace Crustum\Explorator\Event;
 use Cake\Event\Event;
 use Cake\ORM\Table;
 use Crustum\Explorator\Builder;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 use Throwable;
 
 /**
@@ -47,7 +47,7 @@ class SearchPerformed extends Event
      * Build and return a SearchPerformed event from a builder + engine result.
      *
      * @param \Crustum\Explorator\Builder $builder Search builder
-     * @param \Crustum\Explorator\Engines\Engine $engine Engine that ran the search
+     * @param \Crustum\Explorator\Engine\Engine $engine Engine that ran the search
      * @param mixed $results Raw engine results
      * @param float $durationMs Duration in milliseconds
      * @param string $operation Operation name (`search` or `paginate`)

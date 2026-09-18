@@ -8,7 +8,7 @@ use Cake\Console\ConsoleIo;
 use Cake\Console\ConsoleOptionParser;
 use Cake\Core\Configure;
 use Crustum\Explorator\Explorator;
-use Crustum\Explorator\Job\MakeRangeSearchable;
+use Crustum\Explorator\Job\MakeRangeSearchableJob;
 use Override;
 
 /**
@@ -118,7 +118,7 @@ class QueueImportCommand extends ExploratorCommand
         }
 
         foreach ($ranges as [$start, $end]) {
-            Explorator::push(MakeRangeSearchable::class, [
+            Explorator::push(MakeRangeSearchableJob::class, [
                 'source' => $alias,
                 'start' => $start,
                 'end' => $end,

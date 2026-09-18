@@ -6,7 +6,7 @@ namespace Crustum\Explorator\Test\Unit;
 use Cake\ORM\Table;
 use Cake\TestSuite\TestCase;
 use Crustum\Explorator\Builder;
-use Crustum\Explorator\Engines\NullEngine;
+use Crustum\Explorator\Engine\NullEngine;
 
 /**
  * Unit tests for NullEngine.

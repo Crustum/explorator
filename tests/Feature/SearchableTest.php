@@ -10,11 +10,11 @@ use Cake\Queue\Job\JobInterface;
 use Cake\Queue\Job\Message;
 use Cake\Queue\TestSuite\QueueTrait;
 use Crustum\Explorator\Builder;
+use Crustum\Explorator\Engine\Engine;
 use Crustum\Explorator\EngineManager;
-use Crustum\Explorator\Engines\Engine;
 use Crustum\Explorator\Explorator;
-use Crustum\Explorator\Job\MakeSearchable;
-use Crustum\Explorator\Job\RemoveFromSearch;
+use Crustum\Explorator\Job\MakeSearchableJob;
+use Crustum\Explorator\Job\RemoveFromSearchJob;
 use Crustum\Explorator\SearchableIndexer;
 use Mockery as m;
 use TestApp\Model\Entity\SearchableUser;
@@ -36,8 +36,8 @@ class SearchableTest extends FeatureTestCase
         parent::setUp();
         Configure::write('Explorator.queue', false);
         Configure::write('Explorator.driver', 'null');
-        Explorator::makeSearchableUsing(MakeSearchable::class);
-        Explorator::removeFromSearchUsing(RemoveFromSearch::class);
+        Explorator::makeSearchableUsing(MakeSearchableJob::class);
+        Explorator::removeFromSearchUsing(RemoveFromSearchJob::class);
     }
 
     /**
@@ -45,15 +45,15 @@ class SearchableTest extends FeatureTestCase
      */
     protected function tearDown(): void
     {
-        Explorator::makeSearchableUsing(MakeSearchable::class);
-        Explorator::removeFromSearchUsing(RemoveFromSearch::class);
+        Explorator::makeSearchableUsing(MakeSearchableJob::class);
+        Explorator::removeFromSearchUsing(RemoveFromSearchJob::class);
         unset($GLOBALS['explorator_test_engine']);
         m::close();
         parent::tearDown();
     }
 
     /**
-     * @param \Crustum\Explorator\Engines\Engine $engine Engine
+     * @param \Crustum\Explorator\Engine\Engine $engine Engine
      * @return \TestApp\Model\Entity\SearchableUser
      */
     protected function entityUsing(Engine $engine): SearchableUser
@@ -62,7 +62,7 @@ class SearchableTest extends FeatureTestCase
 
         return new class extends SearchableUser {
             /**
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             public function searchableUsing(): Engine
             {
@@ -98,10 +98,56 @@ class SearchableTest extends FeatureTestCase
 
         (new SearchableIndexer($manager))->makeSearchable([$entity]);
 
-        $this->assertJobQueuedWith(MakeSearchable::class, [
+        $this->assertJobQueuedWith(MakeSearchableJob::class, [
             'source' => 'SearchableUsers',
             'ids' => [9],
         ]);
+    }
+
+    /**
+     * @return void
+     */
+    public function testQueuedJobsApplyGlobalDelayOption(): void
+    {
+        Configure::write('Explorator.jobs.options', ['delay' => 60]);
+
+        Explorator::push(MakeSearchableJob::class, ['source' => 'SearchableUsers', 'ids' => [9]]);
+
+        $this->assertJobQueuedWithDelay(MakeSearchableJob::class, 60);
+
+        Configure::delete('Explorator.jobs.options');
+    }
+
+    /**
+     * @return void
+     */
+    public function testPerCallOptionsOverrideGlobalJobOptions(): void
+    {
+        Configure::write('Explorator.jobs.options', ['delay' => 60]);
+
+        Explorator::push(MakeSearchableJob::class, ['source' => 'SearchableUsers', 'ids' => [9]], ['delay' => 5]);
+
+        $jobs = $this->getQueuedJobsByClass(MakeSearchableJob::class);
+        $this->assertSame(5, $jobs[0]['options']['delay']);
+
+        Configure::delete('Explorator.jobs.options');
+    }
+
+    /**
+     * @return void
+     */
+    public function testGlobalJobOptionsIgnoreUnsupportedKeys(): void
+    {
+        Configure::write('Explorator.jobs.options', ['tries' => 3, 'bogus' => 1]);
+
+        Explorator::push(MakeSearchableJob::class, ['source' => 'SearchableUsers', 'ids' => [9]]);
+
+        $jobs = $this->getQueuedJobsByClass(MakeSearchableJob::class);
+        $this->assertNull($jobs[0]['options']['delay']);
+        $this->assertNull($jobs[0]['options']['expires']);
+        $this->assertNull($jobs[0]['options']['priority']);
+
+        Configure::delete('Explorator.jobs.options');
     }
 
     /**
@@ -183,7 +229,7 @@ class SearchableTest extends FeatureTestCase
         $entity->set('id', 4);
 
         (new SearchableIndexer($manager))->removeFromSearch([$entity]);
-        $this->assertJobQueuedWith(RemoveFromSearch::class, [
+        $this->assertJobQueuedWith(RemoveFromSearchJob::class, [
             'source' => 'SearchableUsers',
             'ids' => [4],
         ]);
@@ -373,6 +419,6 @@ class SearchableTest extends FeatureTestCase
      */
     public function testQueueMakeSearchableUsesConfiguredJobClass(): void
     {
-        $this->assertSame(MakeSearchable::class, Explorator::$makeSearchableJob);
+        $this->assertSame(MakeSearchableJob::class, Explorator::$makeSearchableJob);
     }
 }

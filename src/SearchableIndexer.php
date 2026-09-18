@@ -9,10 +9,10 @@ use Cake\Datasource\EntityInterface;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\Table;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 use Crustum\Explorator\Event\ModelsFlushed;
 use Crustum\Explorator\Event\ModelsImported;
-use Crustum\Explorator\Job\RemovableExploratorCollection;
+use Crustum\Explorator\Support\RemoveableExploratorCollection;
 
 /**
  * Shared batch indexing / removal used by SearchableTrait and Behavior.
@@ -255,7 +255,7 @@ class SearchableIndexer
      */
     protected function pushRemoveFromSearch(CollectionInterface $entities): void
     {
-        $payload = RemovableExploratorCollection::fromEntities($entities);
+        $payload = RemoveableExploratorCollection::fromEntities($entities);
         $rows = $payload->toList();
         if ($rows === []) {
             return;
@@ -299,7 +299,7 @@ class SearchableIndexer
 
     /**
      * @param \Cake\Datasource\EntityInterface $entity Entity
-     * @return \Crustum\Explorator\Engines\Engine
+     * @return \Crustum\Explorator\Engine\Engine
      */
     protected function engineFor(EntityInterface $entity): Engine
     {
