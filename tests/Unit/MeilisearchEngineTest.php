@@ -7,8 +7,8 @@ use Cake\Core\Configure;
 use Cake\ORM\Table;
 use Cake\TestSuite\TestCase;
 use Crustum\Explorator\Builder;
-use Crustum\Explorator\Engines\Engine;
-use Crustum\Explorator\Engines\MeilisearchEngine;
+use Crustum\Explorator\Engine\Engine;
+use Crustum\Explorator\Engine\MeilisearchEngine;
 use Meilisearch\Client;
 use Meilisearch\Contracts\IndexesResults;
 use Meilisearch\Endpoints\Indexes;
@@ -112,7 +112,7 @@ class MeilisearchEngineTest extends TestCase
             }
 
             /**
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             public function searchableUsing(): Engine
             {

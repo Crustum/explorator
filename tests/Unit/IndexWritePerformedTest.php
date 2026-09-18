@@ -8,9 +8,9 @@ use Cake\Event\EventManager;
 use Cake\ORM\Entity;
 use Cake\ORM\Table;
 use Cake\TestSuite\TestCase;
+use Crustum\Explorator\Engine\Engine;
+use Crustum\Explorator\Engine\NullEngine;
 use Crustum\Explorator\EngineManager;
-use Crustum\Explorator\Engines\Engine;
-use Crustum\Explorator\Engines\NullEngine;
 use Crustum\Explorator\Event\IndexWritePerformed;
 use Crustum\Explorator\SearchableIndexer;
 use Mockery as m;
@@ -64,7 +64,7 @@ class IndexWritePerformedTest extends TestCase
 
         $indexer = new class ($engine) extends SearchableIndexer {
             /**
-             * @param \Crustum\Explorator\Engines\Engine $engine Engine
+             * @param \Crustum\Explorator\Engine\Engine $engine Engine
              */
             public function __construct(protected Engine $fixedEngine)
             {
@@ -73,7 +73,7 @@ class IndexWritePerformedTest extends TestCase
 
             /**
              * @param \Cake\Datasource\EntityInterface $entity Entity
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             protected function engineFor(EntityInterface $entity): Engine
             {
@@ -122,7 +122,7 @@ class IndexWritePerformedTest extends TestCase
 
         $indexer = new class ($engine) extends SearchableIndexer {
             /**
-             * @param \Crustum\Explorator\Engines\Engine $engine Engine
+             * @param \Crustum\Explorator\Engine\Engine $engine Engine
              */
             public function __construct(protected Engine $fixedEngine)
             {
@@ -131,7 +131,7 @@ class IndexWritePerformedTest extends TestCase
 
             /**
              * @param \Cake\Datasource\EntityInterface $entity Entity
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             protected function engineFor(EntityInterface $entity): Engine
             {
@@ -157,7 +157,7 @@ class IndexWritePerformedTest extends TestCase
 
         $indexer = new class ($engine) extends SearchableIndexer {
             /**
-             * @param \Crustum\Explorator\Engines\Engine $engine Engine
+             * @param \Crustum\Explorator\Engine\Engine $engine Engine
              */
             public function __construct(protected Engine $fixedEngine)
             {
@@ -166,7 +166,7 @@ class IndexWritePerformedTest extends TestCase
 
             /**
              * @param \Cake\Datasource\EntityInterface $entity Entity
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             protected function engineFor(EntityInterface $entity): Engine
             {

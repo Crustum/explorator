@@ -4,10 +4,15 @@ declare(strict_types=1);
 namespace Crustum\Explorator\Test\Integration;
 
 use Cake\Core\Configure;
+use Cake\ORM\Locator\TableLocator;
+use Crustum\Explorator\Builder;
+use Crustum\Explorator\Engine\TypesenseEngine;
 use Crustum\Explorator\EngineManager;
 use PHPUnit\Framework\Attributes\Group;
+use TestApp\Model\Entity\SearchableUser;
 use TestApp\Model\Table\SearchableUsersTable;
 use Throwable;
+use Typesense\Client;
 
 /**
  * Live Typesense integration (exact maps + empty-query paginate + max-int overflow).
@@ -343,5 +348,138 @@ class TypesenseSearchableTest extends IntegrationTestCase
     public function testItCanFilterWithWhereComparisons(): void
     {
         $this->itCanMakeWhereComparisons();
+    }
+
+    /**
+     * @return void
+     */
+    public function testItCanUseUserProvidedEmbeddingsForSemanticSearch(): void
+    {
+        if (!class_exists(Client::class)) {
+            $this->markTestSkipped('typesense/typesense-php is required for this test.');
+        }
+
+        $index = 'semantic_' . bin2hex(random_bytes(6));
+
+        $table = new class (['alias' => 'SemanticTypesense', 'table' => 'semantic_typesense']) extends SearchableUsersTable {
+            /**
+             * @var string
+             */
+            public static string $index = '';
+
+            /**
+             * @inheritDoc
+             */
+            public function searchableAs(): string
+            {
+                return static::$index;
+            }
+
+            /**
+             * @inheritDoc
+             */
+            public function indexableAs(): string
+            {
+                return static::$index;
+            }
+        };
+        $table::$index = $index;
+        $tableClass = $table::class;
+
+        $dimensions = 384;
+
+        Configure::write('Explorator.typesense.model-settings.' . $tableClass, [
+            'collection-schema' => [
+                'fields' => [
+                    ['name' => 'id', 'type' => 'string'],
+                    ['name' => 'name', 'type' => 'string'],
+                    ['name' => 'embedding', 'type' => 'float[]', 'num_dim' => $dimensions],
+                ],
+            ],
+            'search-parameters' => [
+                'query_by' => 'name',
+            ],
+        ]);
+
+        $engine = new TypesenseEngine(
+            new Client((array)Configure::read('Explorator.typesense.client-settings', [])),
+            1000,
+            false,
+            [
+                'model-settings' => [
+                    $tableClass => [
+                        'embedding' => [
+                            'attribute' => 'embedding',
+                            'dimensions' => $dimensions,
+                        ],
+                    ],
+                ],
+            ],
+        );
+
+        $locator = new TableLocator();
+        $locator->set('SemanticTypesense', $table);
+
+        $engine->setTableLocator($locator);
+
+        $newEntity = function (int $id, string $name, array $vector): SearchableUser {
+            $entity = new class (['id' => $id, 'name' => $name]) extends SearchableUser {
+                /**
+                 * @return array<string, mixed>
+                 */
+                public function toSearchableArray(): array
+                {
+                    return [
+                        'id' => (string)$this->id,
+                        'name' => $this->name,
+                    ];
+                }
+
+                /**
+                 * @return string|array<int, float>
+                 */
+                public function toSearchableEmbedding(): string|array
+                {
+                    return $this->get('embedding');
+                }
+            };
+            $entity->set('embedding', $vector);
+            $entity->setSource('SemanticTypesense');
+
+            return $entity;
+        };
+
+        try {
+            $catVector = array_fill(0, $dimensions, 0.001953125);
+            $catVector[0] = 1.0;
+
+            $rocketVector = array_fill(0, $dimensions, 0.001953125);
+            $rocketVector[$dimensions - 1] = 1.0;
+
+            $cat = $newEntity(1, 'A sleeping cat', $catVector);
+            $rocket = $newEntity(2, 'A rocket launch', $rocketVector);
+
+            $engine->update([$cat, $rocket]);
+
+            $this->assertGreaterThan(4000, strlen(implode(', ', $catVector)));
+
+            $results = $engine->search(
+                (new Builder($table, 'a relaxed pet'))
+                    ->options(['vector' => $catVector])
+                    ->semantic(),
+            );
+
+            $this->assertSame('1', $results['hits'][0]['document']['id']);
+
+            $results = $engine->search(
+                (new Builder($table, 'rocket'))
+                    ->options(['vector' => $rocketVector])
+                    ->hybrid(),
+            );
+
+            $this->assertSame('2', $results['hits'][0]['document']['id']);
+        } finally {
+            $engine->deleteIndex($index);
+        }
     }
 }

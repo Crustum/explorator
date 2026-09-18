@@ -74,4 +74,27 @@ class BuilderTest extends FeatureTestCase
         $this->assertSame(10, $paginator->totalCount());
         $this->assertSame(1, $paginator->pageCount());
     }
+
+    /**
+     * @return void
+     */
+    public function testItMarksTheBuilderAsSemantic(): void
+    {
+        $builder = $this->SearchableUsers->search('hello')->semantic(0.7);
+
+        $this->assertTrue($builder->semanticSearch);
+        $this->assertNull($builder->hybridSearch);
+        $this->assertSame(0.7, $builder->minimumSimilarity);
+    }
+
+    /**
+     * @return void
+     */
+    public function testItMarksTheBuilderAsHybrid(): void
+    {
+        $builder = $this->SearchableUsers->search('hello')->hybrid(2, 3);
+
+        $this->assertFalse($builder->semanticSearch);
+        $this->assertSame(['text_weight' => 2, 'semantic_weight' => 3], $builder->hybridSearch);
+    }
 }

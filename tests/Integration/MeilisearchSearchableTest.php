@@ -6,12 +6,13 @@ namespace Crustum\Explorator\Test\Integration;
 use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
 use Crustum\Explorator\Builder;
+use Crustum\Explorator\Engine\MeilisearchEngine;
 use Crustum\Explorator\EngineManager;
-use Crustum\Explorator\Engines\MeilisearchEngine;
 use Meilisearch\Client;
 use Meilisearch\Endpoints\Indexes;
 use Mockery;
 use PHPUnit\Framework\Attributes\Group;
+use TestApp\Model\Entity\MeilisearchSearchableUser;
 use TestApp\Model\Table\SearchableUsersTable;
 use TestApp\Model\Table\VersionableUsersTable;
 use Throwable;
@@ -335,5 +336,74 @@ class MeilisearchSearchableTest extends IntegrationTestCase
     public function testItCanFilterWithWhereComparisons(): void
     {
         $this->itCanMakeWhereComparisons();
+    }
+
+    /**
+     * @return void
+     */
+    public function testItCanUseUserProvidedEmbeddingsForSemanticSearch(): void
+    {
+        if (!class_exists(Client::class)) {
+            $this->markTestSkipped('meilisearch/meilisearch-php is required for this test.');
+        }
+
+        $config = (array)Configure::read('Explorator.meilisearch');
+        $client = new Client(
+            (string)($config['host'] ?? 'http://localhost:7700'),
+            $config['key'] ?? null,
+        );
+
+        $previousPrefix = Configure::read('Explorator.prefix');
+        $prefix = 'explorator_semantic_' . uniqid();
+        Configure::write('Explorator.prefix', $prefix);
+
+        $indexName = $prefix . 'searchable_users';
+
+        try {
+            $task = $client->index($indexName)->updateEmbedders([
+                'default' => [
+                    'source' => 'userProvided',
+                    'dimensions' => 2,
+                ],
+            ],);
+            $client->waitForTask($task['taskUid']);
+
+            $engine = new MeilisearchEngine(
+                $client,
+                false,
+                [
+                    'model-settings' => [
+                        SearchableUsersTable::class => [
+                            'embedding' => [
+                                'embedder' => 'default',
+                                'dimensions' => 2,
+                            ],
+                        ],
+                    ],
+                ],
+            );
+
+            $cat = new MeilisearchSearchableUser(['id' => 1, 'name' => 'A sleeping cat']);
+            $cat->set('embedding', [1, 0]);
+            $cat->setSource('SearchableUsers');
+
+            $rocket = new MeilisearchSearchableUser(['id' => 2, 'name' => 'A rocket launch']);
+            $rocket->set('embedding', [0, 1]);
+            $rocket->setSource('SearchableUsers');
+
+            $engine->update([$cat, $rocket]);
+
+            $results = $engine->search(
+                (new Builder($this->SearchableUsers, 'a relaxed pet'))
+                    ->options(['vector' => [1, 0]])
+                    ->semantic(),
+            );
+
+            $this->assertSame(1, $results['hits'][0]['id']);
+        } finally {
+            Configure::write('Explorator.prefix', $previousPrefix);
+            $task = $client->deleteIndex($indexName);
+            $client->waitForTask($task['taskUid']);
+        }
     }
 }

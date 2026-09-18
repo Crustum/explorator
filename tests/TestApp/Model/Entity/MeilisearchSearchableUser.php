@@ -28,4 +28,18 @@ class MeilisearchSearchableUser extends SearchableUser
             'email' => $this->email,
         ];
     }
+
+    /**
+     * Searchable embedding source for semantic/hybrid tests.
+     *
+     * @return string|array<int, float>
+     */
+    public function toSearchableEmbedding(): string|array
+    {
+        if (isset($this->embedding) && is_array($this->embedding)) {
+            return $this->embedding;
+        }
+
+        return (string)$this->name;
+    }
 }

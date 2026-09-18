@@ -7,7 +7,7 @@ use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
 use Cake\Datasource\EntityInterface;
 use Cake\I18n\DateTime;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 use Crustum\Explorator\Model\Behavior\SearchableBehavior;
 use Mockery as m;
 use TestApp\Model\Entity\ObserverSearchableUser;
@@ -25,7 +25,7 @@ class ModelObserverWithSoftDeletesTest extends FeatureTestCase
     protected SearchableUsersTable $SearchableUsers;
 
     /**
-     * @var \Mockery\MockInterface&\Crustum\Explorator\Engines\Engine
+     * @var \Mockery\MockInterface&\Crustum\Explorator\Engine\Engine
      */
     protected Engine $engine;
 

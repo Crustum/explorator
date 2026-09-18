@@ -8,7 +8,7 @@ use Cake\ORM\ResultSet;
 use Cake\ORM\Table;
 use Cake\TestSuite\TestCase;
 use Crustum\Explorator\Builder;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 use Mockery as m;
 
 /**
@@ -32,7 +32,7 @@ class BuilderTest extends TestCase
     {
         $table = new class (['alias' => 'Dummy']) extends Table {
             /**
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             public function searchableUsing(): Engine
             {
@@ -67,7 +67,7 @@ class BuilderTest extends TestCase
     {
         $table = new class (['alias' => 'Dummy']) extends Table {
             /**
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             public function searchableUsing(): Engine
             {
@@ -100,7 +100,7 @@ class BuilderTest extends TestCase
     {
         $table = new class (['alias' => 'Dummy']) extends Table {
             /**
-             * @return \Crustum\Explorator\Engines\Engine
+             * @return \Crustum\Explorator\Engine\Engine
              */
             public function searchableUsing(): Engine
             {

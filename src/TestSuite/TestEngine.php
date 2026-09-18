@@ -8,7 +8,7 @@ use Cake\ORM\Table;
 use Cake\ORM\TableRegistry;
 use Closure;
 use Crustum\Explorator\Builder;
-use Crustum\Explorator\Engines\NullEngine;
+use Crustum\Explorator\Engine\NullEngine;
 use Override;
 use Throwable;
 

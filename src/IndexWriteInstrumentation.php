@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Crustum\Explorator;
 
 use Cake\Event\EventManager;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 use Crustum\Explorator\Event\IndexWritePerformed;
 use Throwable;
 
@@ -17,7 +17,7 @@ final class IndexWriteInstrumentation
      * Run an index write callback, measure duration, and fire IndexWritePerformed.
      *
      * @param iterable<\Cake\Datasource\EntityInterface> $entities Entities being written
-     * @param \Crustum\Explorator\Engines\Engine $engine Engine instance
+     * @param \Crustum\Explorator\Engine\Engine $engine Engine instance
      * @param callable(): void $callback Write callback
      * @param string $operation Operation name (`update` or `delete`)
      * @return void

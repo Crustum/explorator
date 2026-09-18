@@ -8,7 +8,7 @@ use Cake\Datasource\ConnectionManager;
 use Cake\I18n\DateTime;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\TestSuite\TestCase;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 use Mockery as m;
 use TestApp\Model\Table\SearchableUsersTable;
 

@@ -28,6 +28,7 @@
         "cakedc/cakephp-phpstan": "^4.3",
         "cakephp/bake": "^3.0",
         "phpunit/phpunit": "^11.1.3 || ^12.5.0",
+        "crustum/cakephp-ai": "dev-main",
         "crustum/essentia": "^1.0",
         "cakephp/cakephp-codesniffer": "^5.0",
         "phpstan/phpstan": "^2.2.2,<2.2.6",
@@ -43,7 +44,8 @@
         "algolia/algoliasearch-client-php": "Required to use the Algolia engine (^4.14).",
         "meilisearch/meilisearch-php": "Required to use the Meilisearch engine (^1.0).",
         "guzzlehttp/guzzle": "PSR-18 HTTP client for live Meilisearch / Typesense HTTP APIs (^7.15).",
-        "typesense/typesense-php": "Required to use the Typesense engine (^4.9)."
+        "typesense/typesense-php": "Required to use the Typesense engine (^4.9).",
+        "crustum/cakephp-ai": "Required for semantic/hybrid search: generates embeddings via Crustum\\Ai\\Embeddings (^1.0)."
     },
     "conflict": {
         "algolia/algoliasearch-client-php": "<4.14.0|>=5.0.0",

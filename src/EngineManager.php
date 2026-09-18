@@ -5,14 +5,17 @@ namespace Crustum\Explorator;
 
 use Algolia\AlgoliaSearch\Api\SearchClient;
 use Cake\Core\Configure;
+use Cake\Http\Client as HttpClient;
 use Cake\Utility\Inflector;
-use Crustum\Explorator\Engines\Algolia4Engine;
-use Crustum\Explorator\Engines\CollectionEngine;
-use Crustum\Explorator\Engines\DatabaseEngine;
-use Crustum\Explorator\Engines\Engine;
-use Crustum\Explorator\Engines\MeilisearchEngine;
-use Crustum\Explorator\Engines\NullEngine;
-use Crustum\Explorator\Engines\TypesenseEngine;
+use Crustum\Explorator\Engine\Algolia4Engine;
+use Crustum\Explorator\Engine\CollectionEngine;
+use Crustum\Explorator\Engine\DatabaseEngine;
+use Crustum\Explorator\Engine\Engine;
+use Crustum\Explorator\Engine\MeilisearchEngine;
+use Crustum\Explorator\Engine\NullEngine;
+use Crustum\Explorator\Engine\TurbopufferEngine;
+use Crustum\Explorator\Engine\TypesenseEngine;
+use Crustum\Explorator\Service\Turbopuffer\TurbopufferClient;
 use Crustum\Explorator\TestSuite\TestEngine;
 use Exception;
 use InvalidArgumentException;
@@ -27,14 +30,14 @@ class EngineManager
     /**
      * Resolved engine instances.
      *
-     * @var array<string, \Crustum\Explorator\Engines\Engine>
+     * @var array<string, \Crustum\Explorator\Engine\Engine>
      */
     protected array $drivers = [];
 
     /**
      * Custom driver creators.
      *
-     * @var array<string, callable(): \Crustum\Explorator\Engines\Engine>
+     * @var array<string, callable(): \Crustum\Explorator\Engine\Engine>
      */
     protected array $customCreators = [];
 
@@ -42,7 +45,7 @@ class EngineManager
      * Get a Explorator engine instance.
      *
      * @param string|null $name Driver name
-     * @return \Crustum\Explorator\Engines\Engine
+     * @return \Crustum\Explorator\Engine\Engine
      */
     public function engine(?string $name = null): Engine
     {
@@ -53,7 +56,7 @@ class EngineManager
      * Get a driver instance.
      *
      * @param string|null $driver Driver name
-     * @return \Crustum\Explorator\Engines\Engine
+     * @return \Crustum\Explorator\Engine\Engine
      */
     public function driver(?string $driver = null): Engine
     {
@@ -66,7 +69,7 @@ class EngineManager
      * Register a custom driver creator.
      *
      * @param string $driver Driver name
-     * @param callable(): \Crustum\Explorator\Engines\Engine $callback Creator
+     * @param callable(): \Crustum\Explorator\Engine\Engine $callback Creator
      * @return $this
      */
     public function extend(string $driver, callable $callback)
@@ -107,7 +110,7 @@ class EngineManager
     /**
      * Create a null engine instance.
      *
-     * @return \Crustum\Explorator\Engines\NullEngine
+     * @return \Crustum\Explorator\Engine\NullEngine
      */
     public function createNullDriver(): NullEngine
     {
@@ -127,7 +130,7 @@ class EngineManager
     /**
      * Create a collection engine instance.
      *
-     * @return \Crustum\Explorator\Engines\CollectionEngine
+     * @return \Crustum\Explorator\Engine\CollectionEngine
      */
     public function createCollectionDriver(): CollectionEngine
     {
@@ -137,7 +140,7 @@ class EngineManager
     /**
      * Create a database engine instance.
      *
-     * @return \Crustum\Explorator\Engines\DatabaseEngine
+     * @return \Crustum\Explorator\Engine\DatabaseEngine
      */
     public function createDatabaseDriver(): DatabaseEngine
     {
@@ -147,7 +150,7 @@ class EngineManager
     /**
      * Create an Algolia engine (v4 client).
      *
-     * @return \Crustum\Explorator\Engines\Algolia4Engine
+     * @return \Crustum\Explorator\Engine\Algolia4Engine
      * @throws \Exception
      */
     public function createAlgoliaDriver(): Algolia4Engine
@@ -169,7 +172,7 @@ class EngineManager
     /**
      * Create a Meilisearch engine.
      *
-     * @return \Crustum\Explorator\Engines\MeilisearchEngine
+     * @return \Crustum\Explorator\Engine\MeilisearchEngine
      * @throws \Exception
      */
     public function createMeilisearchDriver(): MeilisearchEngine
@@ -185,13 +188,35 @@ class EngineManager
             $config['key'] ?? null,
         );
 
-        return new MeilisearchEngine($client, (bool)Configure::read('Explorator.soft_delete', false));
+        return new MeilisearchEngine(
+            $client,
+            (bool)Configure::read('Explorator.soft_delete', false),
+            $config,
+        );
+    }
+
+    /**
+     * Create a Turbopuffer engine.
+     *
+     * @return \Crustum\Explorator\Engine\TurbopufferEngine
+     * @throws \Exception
+     */
+    public function createTurbopufferDriver(): TurbopufferEngine
+    {
+        /** @var array<string, mixed> $config */
+        $config = Configure::read('Explorator.turbopuffer', []);
+
+        return new TurbopufferEngine(
+            new TurbopufferClient(new HttpClient(), $config),
+            $config,
+            (bool)Configure::read('Explorator.soft_delete', false),
+        );
     }
 
     /**
      * Create a Typesense engine.
      *
-     * @return \Crustum\Explorator\Engines\TypesenseEngine
+     * @return \Crustum\Explorator\Engine\TypesenseEngine
      * @throws \Exception
      */
     public function createTypesenseDriver(): TypesenseEngine
@@ -209,6 +234,7 @@ class EngineManager
             new TypesenseClient($settings),
             (int)($config['max_total_results'] ?? 1000),
             (bool)Configure::read('Explorator.soft_delete', false),
+            $config,
         );
     }
 
@@ -216,7 +242,7 @@ class EngineManager
      * Create a new driver instance.
      *
      * @param string $driver Driver name
-     * @return \Crustum\Explorator\Engines\Engine
+     * @return \Crustum\Explorator\Engine\Engine
      * @throws \InvalidArgumentException
      */
     protected function createDriver(string $driver): Engine

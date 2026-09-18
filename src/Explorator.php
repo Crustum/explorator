@@ -3,9 +3,10 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator;
 
+use Cake\Core\Configure;
 use Cake\Queue\QueueManager;
-use Crustum\Explorator\Job\MakeSearchable;
-use Crustum\Explorator\Job\RemoveFromSearch;
+use Crustum\Explorator\Job\MakeSearchableJob;
+use Crustum\Explorator\Job\RemoveFromSearchJob;
 
 /**
  * Explorator package helpers and version.
@@ -24,14 +25,14 @@ class Explorator
      *
      * @var class-string<\Cake\Queue\Job\JobInterface>
      */
-    public static string $makeSearchableJob = MakeSearchable::class;
+    public static string $makeSearchableJob = MakeSearchableJob::class;
 
     /**
      * Job class used when queueing remove-from-search work.
      *
      * @var class-string<\Cake\Queue\Job\JobInterface>
      */
-    public static string $removeFromSearchJob = RemoveFromSearch::class;
+    public static string $removeFromSearchJob = RemoveFromSearchJob::class;
 
     /**
      * @param class-string<\Cake\Queue\Job\JobInterface> $class Job class
@@ -61,6 +62,45 @@ class Explorator
      */
     public static function push(string|array $class, array $data = [], array $options = []): void
     {
+        if (isset($data['ids']) && is_array($data['ids'])) {
+            // Normalize key order so unique jobs deduplicate identical id sets.
+            $ids = array_values($data['ids']);
+            sort($ids);
+            $data['ids'] = $ids;
+        }
+
+        $options = array_merge(static::defaultJobOptions(), $options);
+
         QueueManager::push($class, $data, $options);
+    }
+
+    /**
+     * Global push options for Explorator jobs from `Explorator.jobs.options`.
+     *
+     * Only keys supported by QueueManager::push() are passed through.
+     * Job retries are not push options: control them with `$maxAttempts`
+     * on custom job classes or the worker `--max-attempts` option.
+     *
+     * @return array{delay?: int, expires?: int, priority?: int|string}
+     */
+    protected static function defaultJobOptions(): array
+    {
+        $configured = Configure::read('Explorator.jobs.options');
+        if (!is_array($configured)) {
+            return [];
+        }
+
+        $options = [];
+        foreach (['delay', 'expires'] as $key) {
+            if (isset($configured[$key]) && is_numeric($configured[$key])) {
+                $options[$key] = (int)$configured[$key];
+            }
+        }
+
+        if (isset($configured['priority']) && (is_string($configured['priority']) || is_int($configured['priority']))) {
+            $options['priority'] = $configured['priority'];
+        }
+
+        return $options;
     }
 }

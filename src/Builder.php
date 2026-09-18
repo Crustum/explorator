@@ -10,7 +10,7 @@ use Cake\Datasource\Paging\PaginatedResultSet;
 use Cake\Datasource\ResultSetInterface;
 use Cake\ORM\Table;
 use Closure;
-use Crustum\Explorator\Engines\Engine;
+use Crustum\Explorator\Engine\Engine;
 
 /**
  * Fluent Explorator search builder (no Macroable).
@@ -29,7 +29,7 @@ class Builder
      *
      * @var string
      */
-    public string $query;
+    public ?string $query;
 
     /**
      * Optional callback before search execution (engine-specific).
@@ -102,6 +102,27 @@ class Builder
     public array $options = [];
 
     /**
+     * Whether the search is a semantic search.
+     *
+     * @var bool
+     */
+    public bool $semanticSearch = false;
+
+    /**
+     * Hybrid search weights, or null when not a hybrid search.
+     *
+     * @var array{text_weight: int, semantic_weight: int}|null
+     */
+    public ?array $hybridSearch = null;
+
+    /**
+     * Minimum similarity threshold for semantic/hybrid search.
+     *
+     * @var float|null
+     */
+    public ?float $minimumSimilarity = null;
+
+    /**
      * Engine manager used to resolve the active driver.
      *
      * @var \Crustum\Explorator\EngineManager|null
@@ -117,7 +138,7 @@ class Builder
      */
     public function __construct(
         Table $table,
-        string $query = '',
+        ?string $query = null,
         ?Closure $callback = null,
         bool $softDelete = false,
         ?EngineManager $engineManager = null,
@@ -291,6 +312,39 @@ class Builder
     public function options(array $options)
     {
         $this->options = $options;
+
+        return $this;
+    }
+
+    /**
+     * Perform a semantic (meaning-based) search.
+     *
+     * @param float|null $minSimilarity Minimum similarity threshold
+     * @return $this
+     */
+    public function semantic(?float $minSimilarity = null)
+    {
+        $this->semanticSearch = true;
+        $this->minimumSimilarity = $minSimilarity;
+
+        return $this;
+    }
+
+    /**
+     * Perform a hybrid (full-text + semantic) search.
+     *
+     * @param int $textWeight Full-text ranking weight
+     * @param int $semanticWeight Semantic ranking weight
+     * @param float|null $minSimilarity Minimum similarity threshold
+     * @return $this
+     */
+    public function hybrid(int $textWeight = 1, int $semanticWeight = 1, ?float $minSimilarity = null)
+    {
+        $this->hybridSearch = [
+            'text_weight' => $textWeight,
+            'semantic_weight' => $semanticWeight,
+        ];
+        $this->minimumSimilarity = $minSimilarity;
 
         return $this;
     }
@@ -557,7 +611,7 @@ class Builder
     /**
      * Resolve the active Explorator engine.
      *
-     * @return \Crustum\Explorator\Engines\Engine
+     * @return \Crustum\Explorator\Engine\Engine
      */
     public function engine(): Engine
     {

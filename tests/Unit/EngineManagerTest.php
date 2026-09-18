@@ -5,9 +5,9 @@ namespace Crustum\Explorator\Test\Unit;
 
 use Cake\Core\Configure;
 use Cake\TestSuite\TestCase;
+use Crustum\Explorator\Engine\CollectionEngine;
+use Crustum\Explorator\Engine\NullEngine;
 use Crustum\Explorator\EngineManager;
-use Crustum\Explorator\Engines\CollectionEngine;
-use Crustum\Explorator\Engines\NullEngine;
 use Crustum\Explorator\TestSuite\TestEngine;
 use InvalidArgumentException;
 
