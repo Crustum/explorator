@@ -5,6 +5,7 @@ namespace Crustum\Explorator\Test\Integration;
 
 use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
+use Cake\I18n\DateTime;
 use Crustum\Explorator\Builder;
 use Crustum\Explorator\Engine\MeilisearchEngine;
 use Crustum\Explorator\EngineManager;
@@ -44,7 +45,7 @@ class MeilisearchSearchableTest extends IntegrationTestCase
         parent::setUp();
 
         Configure::write('Explorator.meilisearch.index-settings.' . SearchableUsersTable::class, [
-            'filterableAttributes' => ['age'],
+            'filterableAttributes' => ['age', 'name'],
         ]);
 
         $this->setUpSearchableSuite();
@@ -63,7 +64,7 @@ class MeilisearchSearchableTest extends IntegrationTestCase
         }
 
         $engine->updateIndexSettings($indexName, [
-            'filterableAttributes' => ['age'],
+            'filterableAttributes' => ['age', 'name'],
         ]);
         $this->SearchableUsers->importSearchable();
         $this->waitForSearchIndex();
@@ -336,6 +337,54 @@ class MeilisearchSearchableTest extends IntegrationTestCase
     public function testItCanFilterWithWhereComparisons(): void
     {
         $this->itCanMakeWhereComparisons();
+    }
+
+    /**
+     * @return void
+     */
+    public function testWhereInAndWhereNotInValuesAreEscaped(): void
+    {
+        $this->SearchableUsers->deleteAll([]);
+
+        $this->SearchableUsers->saveOrFail($this->SearchableUsers->newEntity([
+            'name' => 'Blake Torres',
+            'email' => 'blake@verified.test',
+            'age' => 35,
+            'created' => new DateTime(),
+        ]));
+        $this->SearchableUsers->saveOrFail($this->SearchableUsers->newEntity([
+            'name' => 'Alex Rivera',
+            'email' => 'alex@verified.test',
+            'age' => 30,
+            'created' => new DateTime(),
+        ]));
+
+        $engine = (new EngineManager())->engine($this->exploratorDriver());
+        if (method_exists($engine, 'flush')) {
+            $engine->flush($this->SearchableUsers);
+        }
+
+        if (method_exists($engine, 'updateIndexSettings')) {
+            $engine->updateIndexSettings($this->SearchableUsers->searchableAs(), [
+                'filterableAttributes' => ['age', 'name'],
+            ]);
+        }
+
+        $this->SearchableUsers->importSearchable();
+        $this->waitForSearchIndex();
+
+        $injection = 'x"] OR name IS NOT NULL OR name IN ["y';
+
+        $this->assertSame(
+            [$this->idForName('Blake Torres') => 'Blake Torres'],
+            $this->pluckNameById(
+                $this->SearchableUsers->search('*')->whereIn('name', ['Blake Torres', $injection])->get(),
+            ),
+        );
+        $this->assertNotContains(
+            $this->idForName('Blake Torres'),
+            $this->SearchableUsers->search('*')->whereNotIn('name', ['Blake Torres', $injection])->take(100)->keys()->toList(),
+        );
     }
 
     /**

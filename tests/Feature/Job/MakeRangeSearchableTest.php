@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator\Test\Feature\Job;
 
+use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
 use Cake\I18n\DateTime;
 use Cake\Queue\Job\Message;
+use Cake\Queue\QueueManager;
 use Cake\Queue\TestSuite\QueueTrait;
 use Crustum\Explorator\Explorator;
 use Crustum\Explorator\Job\MakeRangeSearchableJob;
@@ -69,14 +71,18 @@ class MakeRangeSearchableTest extends FeatureTestCase
     /**
      * @param int $start Start id
      * @param int $end End id
+     * @param string $queue Queue argument
+     * @param string $connection Connection argument
      * @return string|null
      */
-    protected function executeRange(int $start, int $end): ?string
+    protected function executeRange(int $start, int $end, string $queue = '', string $connection = ''): ?string
     {
         $message = m::mock(Message::class);
         $message->shouldReceive('getArgument')->with('source', '')->andReturn('SearchableUsers');
         $message->shouldReceive('getArgument')->with('start', 0)->andReturn($start);
         $message->shouldReceive('getArgument')->with('end', 0)->andReturn($end);
+        $message->shouldReceive('getArgument')->with('queue', '')->andReturn($queue);
+        $message->shouldReceive('getArgument')->with('connection', '')->andReturn($connection);
 
         return (new MakeRangeSearchableJob())->execute($message);
     }
@@ -188,5 +194,51 @@ class MakeRangeSearchableTest extends FeatureTestCase
             'ids' => [1, 2, 3, 4, 5],
         ]);
         $this->assertJobQueuedTimes(MakeSearchableJob::class, 1);
+    }
+
+    /**
+     * @return void
+     */
+    public function testExecutePassesQueueAndConnectionToMakeSearchableJob(): void
+    {
+        $this->createUsers(1);
+
+        Configure::write('Explorator.queue', ['connection' => 'sync', 'queue' => 'scout']);
+        QueueManager::setConfig('redis', (array)QueueManager::getConfig('default'));
+        try {
+            $this->assertSame(Processor::ACK, $this->executeRange(1, 1, 'imports', 'redis'));
+
+            $this->assertJobQueuedTimes(MakeSearchableJob::class, 1);
+            $this->assertJobQueuedToQueue('imports', MakeSearchableJob::class);
+            $rows = $this->getQueuedJobsByConfig('redis');
+            $this->assertCount(1, $rows);
+            $this->assertSame(MakeSearchableJob::class, $rows[0]['jobClass']);
+        } finally {
+            Configure::delete('Explorator.queue');
+            QueueManager::drop('redis');
+        }
+    }
+
+    /**
+     * @return void
+     */
+    public function testExecuteUsesModelQueueAndConnectionWhenNeitherIsSet(): void
+    {
+        $this->createUsers(1);
+
+        Configure::write('Explorator.queue', ['connection' => 'sync', 'queue' => 'scout']);
+        QueueManager::setConfig('sync', (array)QueueManager::getConfig('default'));
+        try {
+            $this->assertSame(Processor::ACK, $this->executeRange(1, 1));
+
+            $this->assertJobQueuedTimes(MakeSearchableJob::class, 1);
+            $this->assertJobQueuedToQueue('scout', MakeSearchableJob::class);
+            $rows = $this->getQueuedJobsByConfig('sync');
+            $this->assertCount(1, $rows);
+            $this->assertSame(MakeSearchableJob::class, $rows[0]['jobClass']);
+        } finally {
+            Configure::delete('Explorator.queue');
+            QueueManager::drop('sync');
+        }
     }
 }

@@ -25,9 +25,6 @@ class DatabaseEngineSemanticTest extends FeatureTestCase
 
         $engine = new DatabaseEngine();
 
-        $config = ConnectionManager::getConfig('test');
-        $this->skipIf(str_contains($config['driver'], 'Postgres'), 'Postgres supports vector search');
-
         $table = new SearchableUsersTable([
             'alias' => 'SearchableUsers',
             'table' => 'searchable_users',

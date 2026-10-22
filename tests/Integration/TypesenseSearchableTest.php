@@ -13,6 +13,7 @@ use TestApp\Model\Entity\SearchableUser;
 use TestApp\Model\Table\SearchableUsersTable;
 use Throwable;
 use Typesense\Client;
+use Typesense\Exceptions\ObjectNotFound;
 
 /**
  * Live Typesense integration (exact maps + empty-query paginate + max-int overflow).
@@ -480,6 +481,107 @@ class TypesenseSearchableTest extends IntegrationTestCase
             $this->assertSame('2', $results['hits'][0]['document']['id']);
         } finally {
             $engine->deleteIndex($index);
+        }
+    }
+
+    /**
+     * @return void
+     */
+    public function testItCreatesMissingCollectionsUsingTheIndexableName(): void
+    {
+        if (!class_exists(Client::class)) {
+            $this->markTestSkipped('typesense/typesense-php is required for this test.');
+        }
+
+        $index = 'versioned_' . bin2hex(random_bytes(6));
+
+        $table = new class (['alias' => 'VersionedTypesense', 'table' => 'versioned_typesense']) extends SearchableUsersTable {
+            /**
+             * @var string
+             */
+            public static string $index = '';
+
+            /**
+             * @inheritDoc
+             */
+            public function searchableAs(): string
+            {
+                return static::$index;
+            }
+
+            /**
+             * @inheritDoc
+             */
+            public function indexableAs(): string
+            {
+                return static::$index . '_v2';
+            }
+        };
+        $table::$index = $index;
+        $tableClass = $table::class;
+
+        Configure::write('Explorator.typesense.model-settings.' . $tableClass, [
+            'collection-schema' => [
+                'fields' => [
+                    ['name' => 'id', 'type' => 'string'],
+                    ['name' => 'name', 'type' => 'string'],
+                ],
+            ],
+        ]);
+
+        $client = new Client((array)Configure::read('Explorator.typesense.client-settings', []));
+
+        $engine = new TypesenseEngine($client, 1000);
+
+        $locator = new TableLocator();
+        $locator->set('VersionedTypesense', $table);
+
+        $engine->setTableLocator($locator);
+
+        $newEntity = function (int $id, string $name): SearchableUser {
+            $entity = new class (['id' => $id, 'name' => $name]) extends SearchableUser {
+                /**
+                 * @return array<string, mixed>
+                 */
+                public function toSearchableArray(): array
+                {
+                    return [
+                        'id' => (string)$this->id,
+                        'name' => $this->name,
+                    ];
+                }
+            };
+            $entity->setSource('VersionedTypesense');
+
+            return $entity;
+        };
+
+        try {
+            $engine->update([
+                $newEntity(1, 'Scout Search'),
+                $newEntity(2, 'Explorator Search'),
+            ]);
+
+            $this->assertSame(2, $client->getCollections()->{$table->indexableAs()}->retrieve()['num_documents']);
+
+            $searchableExists = true;
+            try {
+                $client->getCollections()->{$table->searchableAs()}->retrieve();
+            } catch (ObjectNotFound) {
+                $searchableExists = false;
+            }
+
+            $this->assertFalse($searchableExists);
+        } finally {
+            try {
+                $engine->deleteIndex($table->indexableAs());
+            } catch (Throwable) {
+            }
+
+            try {
+                $engine->deleteIndex($table->searchableAs());
+            } catch (Throwable) {
+            }
         }
     }
 }

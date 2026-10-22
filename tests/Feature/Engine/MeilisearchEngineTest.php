@@ -569,6 +569,41 @@ class MeilisearchEngineTest extends FeatureTestCase
     /**
      * @return void
      */
+    public function testWhereValuesAreEscaped(): void
+    {
+        $builder = new Builder($this->SearchableUsers, '');
+        $builder->where('nickname', 'a"b\\c');
+
+        $this->client->shouldReceive('index')->once()->with('users')->andReturn($index = m::mock(Indexes::class));
+        $index->shouldReceive('rawSearch')->once()->with($builder->query, array_filter([
+            'filter' => 'nickname="a\\"b\\\\c"',
+            'hitsPerPage' => $builder->limit,
+        ]))->andReturn([]);
+
+        $this->engine->search($builder);
+    }
+
+    /**
+     * @return void
+     */
+    public function testWhereInAndWhereNotInValuesAreEscaped(): void
+    {
+        $builder = new Builder($this->SearchableUsers, '');
+        $builder->whereIn('category', ['12" pipe', 'back\slash']);
+        $builder->whereNotIn('tag', ['a"] OR team_id = 2 OR tag IN ["b']);
+
+        $this->client->shouldReceive('index')->once()->with('users')->andReturn($index = m::mock(Indexes::class));
+        $index->shouldReceive('rawSearch')->once()->with($builder->query, array_filter([
+            'filter' => 'category IN ["12\" pipe", "back\\\\slash"] AND tag NOT IN ["a\"] OR team_id = 2 OR tag IN [\"b"]',
+            'hitsPerPage' => $builder->limit,
+        ]))->andReturn([]);
+
+        $this->engine->search($builder);
+    }
+
+    /**
+     * @return void
+     */
     public function testDeleteAllIndexesWorksWithPagination(): void
     {
         $this->client->shouldReceive('getIndexes')->andReturn($indexesResults = m::mock(IndexesResults::class));

@@ -280,7 +280,7 @@ composer require algolia/algoliasearch-client-php
 <a name="meilisearch"></a>
 ### Meilisearch
 
-[Meilisearch](https://www.meilisearch.com) is a fast, open source search engine.
+[Meilisearch](https://www.meilisearch.com) is a fast, open source search engine that supports full-text, semantic, and hybrid search. For production, you can [self-host](https://www.meilisearch.com/docs/learn/self_hosted/getting_started_with_self_hosted_meilisearch) Meilisearch or use [Meilisearch Cloud](https://www.meilisearch.com/cloud).
 
 When using the Meilisearch driver you will need to install the Meilisearch PHP SDK and an HTTP factory via Composer:
 
@@ -296,12 +296,7 @@ MEILISEARCH_HOST=http://127.0.0.1:7700
 MEILISEARCH_KEY=masterKey
 ```
 
-For more information regarding Meilisearch, please consult the [Meilisearch documentation](https://docs.meilisearch.com/learn/getting_started/quick_start.html).
-
-Ensure that you install a version of `meilisearch/meilisearch-php` that is compatible with your Meilisearch binary version by reviewing [Meilisearch's documentation regarding binary compatibility](https://github.com/meilisearch/meilisearch-php#-compatibility-with-meilisearch).
-
-> [!WARNING]
-> When upgrading Explorator on an application that utilizes Meilisearch, you should always [review any additional breaking changes](https://github.com/meilisearch/Meilisearch/releases) to the Meilisearch service itself.
+For more information regarding Meilisearch, please consult the [Meilisearch documentation](https://www.meilisearch.com/docs/getting_started/overview).
 
 <a name="typesense"></a>
 ### Typesense
@@ -718,6 +713,8 @@ To use semantic or hybrid search with Meilisearch, configure an embedder in the 
 ```
 
 The entity's `toSearchableEmbedding` method may return source text, which Explorator embeds using the `crustum/cakephp-ai` package, or a precomputed embedding array. After updating the configuration, run the `explorator sync-index-settings` command.
+
+For more information regarding the available embedder sources and their options, please consult the [Meilisearch hybrid search documentation](https://www.meilisearch.com/docs/capabilities/hybrid_search/getting_started).
 
 <a name="meilisearch-data-types"></a>
 #### Searchable Data Types

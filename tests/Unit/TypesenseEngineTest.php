@@ -25,11 +25,13 @@ use ReflectionClass;
 use TestApp\Model\Entity\Chirp;
 use TestApp\Model\Entity\SearchableUser;
 use TestApp\Model\Table\SearchableUsersTable;
+use TestApp\Model\Table\VersionableUsersTable;
 use Typesense\Client as TypesenseClient;
 use Typesense\Collection as TypesenseCollection;
 use Typesense\Collections;
 use Typesense\Document;
 use Typesense\Documents;
+use Typesense\Exceptions\ObjectNotFound;
 use Typesense\Exceptions\RequestMalformed;
 use Typesense\MultiSearch;
 
@@ -384,6 +386,71 @@ class TypesenseEngineTest extends TestCase
             ->method('delete');
 
         $this->engine->flush($table);
+    }
+
+    /**
+     * @return void
+     */
+    public function testMissingCollectionIsCreatedUsingTheIndexableName(): void
+    {
+        Configure::delete('Explorator.typesense.model-settings.' . VersionableUsersTable::class);
+
+        $collection = $this->createMock(TypesenseCollection::class);
+        $collection->method('retrieve')->willThrowException(new ObjectNotFound('Not Found'));
+        $collection->expects($this->once())->method('setExists')->with(true);
+
+        $collections = new class ($collection) extends Collections {
+            /**
+             * @var list<array<string, mixed>>
+             */
+            public array $created = [];
+
+            /**
+             * @var list<string>
+             */
+            public array $accessed = [];
+
+            /**
+             * @param \Typesense\Collection $collection Collection
+             */
+            public function __construct(protected TypesenseCollection $collection)
+            {
+            }
+
+            /**
+             * @param string $collectionName Collection name
+             * @return \Typesense\Collection
+             */
+            public function __get($collectionName)
+            {
+                $this->accessed[] = $collectionName;
+
+                return $this->collection;
+            }
+
+            /**
+             * @param array<string, mixed> $schema Schema
+             * @return array<string, mixed>
+             */
+            public function create(array $schema): array
+            {
+                $this->created[] = $schema;
+
+                return $schema;
+            }
+        };
+
+        $typesenseClient = $this->createMock(TypesenseClient::class);
+        $typesenseClient->method('getCollections')->willReturn($collections);
+
+        $engine = new TypesenseEngine($typesenseClient, 1000);
+
+        $this->invokeMethod($engine, 'getOrCreateCollectionFromModel', [
+            new VersionableUsersTable(['alias' => 'VersionableUsers', 'table' => 'searchable_users']),
+        ]);
+
+        $this->assertSame(['table_v2'], $collections->accessed);
+        $this->assertSame('table_v2', $collections->created[0]['name']);
     }
 
     /**

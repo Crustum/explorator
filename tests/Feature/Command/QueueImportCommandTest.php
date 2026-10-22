@@ -8,11 +8,15 @@ use Cake\Console\ConsoleIo;
 use Cake\Console\TestSuite\StubConsoleOutput;
 use Cake\Core\Configure;
 use Cake\I18n\DateTime;
+use Cake\Queue\Job\Message;
+use Cake\Queue\QueueManager;
 use Cake\Queue\TestSuite\QueueTrait;
 use Crustum\Explorator\Command\QueueImportCommand;
 use Crustum\Explorator\Exception\ExploratorException;
 use Crustum\Explorator\Job\MakeRangeSearchableJob;
+use Crustum\Explorator\Job\MakeSearchableJob;
 use Crustum\Explorator\Test\Feature\FeatureTestCase;
+use Mockery as m;
 use TestApp\Model\Table\SearchableUsersTable;
 
 /**
@@ -37,6 +41,15 @@ class QueueImportCommandTest extends FeatureTestCase
         Configure::write('Explorator.chunk.searchable', 500);
 
         $this->SearchableUsers = $this->getTableLocator()->get('SearchableUsers');
+    }
+
+    /**
+     * @return void
+     */
+    protected function tearDown(): void
+    {
+        m::close();
+        parent::tearDown();
     }
 
     /**
@@ -424,5 +437,40 @@ class QueueImportCommandTest extends FeatureTestCase
                 && ($row['data']['end'] ?? null) === 15
                 && ($row['options']['queue'] ?? null) === 'custom-queue',
         ));
+    }
+
+    /**
+     * @return void
+     */
+    public function testUsesCustomQueueForMakeSearchableJobs(): void
+    {
+        $this->createUsers(1);
+
+        Configure::write('Explorator.queue', ['connection' => 'sync', 'queue' => 'scout']);
+        QueueManager::setConfig('sync', (array)QueueManager::getConfig('default'));
+        try {
+            [$code] = $this->runCommand(['queue' => 'custom-queue']);
+
+            $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+
+            $ranges = $this->getQueuedJobsByClass(MakeRangeSearchableJob::class);
+            $this->assertCount(1, $ranges);
+            $data = $ranges[0]['data'];
+
+            $message = m::mock(Message::class);
+            $message->shouldReceive('getArgument')->with('source', '')->andReturn($data['source']);
+            $message->shouldReceive('getArgument')->with('start', 0)->andReturn($data['start']);
+            $message->shouldReceive('getArgument')->with('end', 0)->andReturn($data['end']);
+            $message->shouldReceive('getArgument')->with('queue', '')->andReturn($data['queue'] ?? '');
+            $message->shouldReceive('getArgument')->with('connection', '')->andReturn($data['connection'] ?? '');
+
+            (new MakeRangeSearchableJob())->execute($message);
+
+            $this->assertJobQueuedTimes(MakeSearchableJob::class, 1);
+            $this->assertJobQueuedToQueue('custom-queue', MakeSearchableJob::class);
+        } finally {
+            Configure::delete('Explorator.queue');
+            QueueManager::drop('sync');
+        }
     }
 }
