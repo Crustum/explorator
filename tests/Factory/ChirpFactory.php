@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Crustum\Explorator\Test\Factory;
 
 use CakephpFixtureFactories\Factory\BaseFactory;
-use Faker\Generator;
+use CakephpFixtureFactories\Generator\GeneratorInterface;
 
 /**
  * Test factory for chirps (workbench ChirpFactory).
  *
- * Uses vierge-noire/cakephp-fixture-factories (require-dev only).
+ * Uses dereuromark/cakephp-fixture-factories (require-dev only).
  */
 class ChirpFactory extends BaseFactory
 {
@@ -22,14 +22,15 @@ class ChirpFactory extends BaseFactory
     }
 
     /**
-     * @return void
+     * @param \CakephpFixtureFactories\Generator\GeneratorInterface $generator Generator
+     * @return array<string, mixed>
      */
-    protected function setDefaultTemplate(): void
+    public function definition(GeneratorInterface $generator): array
     {
-        $this->setDefaultData(fn(Generator $faker): array => [
-            'content' => $faker->text(),
-            'explorator_id' => $faker->uuid(),
+        return [
+            'content' => $generator->text(),
+            'explorator_id' => $generator->uuid(),
             'deleted' => null,
-        ]);
+        ];
     }
 }

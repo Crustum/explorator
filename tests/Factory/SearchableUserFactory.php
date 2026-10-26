@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Crustum\Explorator\Test\Factory;
 
 use CakephpFixtureFactories\Factory\BaseFactory;
-use Faker\Generator;
+use CakephpFixtureFactories\Generator\GeneratorInterface;
 
 /**
  * Test factory for searchable users (workbench SearchableUserFactory).
  *
- * Uses vierge-noire/cakephp-fixture-factories (require-dev only).
+ * Uses dereuromark/cakephp-fixture-factories (require-dev only).
  */
 class SearchableUserFactory extends BaseFactory
 {
@@ -22,16 +22,17 @@ class SearchableUserFactory extends BaseFactory
     }
 
     /**
-     * @return void
+     * @param \CakephpFixtureFactories\Generator\GeneratorInterface $generator Generator
+     * @return array<string, mixed>
      */
-    protected function setDefaultTemplate(): void
+    public function definition(GeneratorInterface $generator): array
     {
-        $this->setDefaultData(fn(Generator $faker): array => [
-            'name' => $faker->name(),
-            'email' => $faker->unique()->safeEmail(),
-            'age' => $faker->numberBetween(18, 90),
+        return [
+            'name' => $generator->name(),
+            'email' => $generator->unique()->safeEmail(),
+            'age' => $generator->numberBetween(18, 90),
             'deleted' => null,
-        ]);
+        ];
     }
 
     /**
@@ -41,8 +42,8 @@ class SearchableUserFactory extends BaseFactory
      */
     public function unverified()
     {
-        return $this->patchData([
-            'email' => $this->getFaker()->unique()->userName() . '@unverified.test',
+        return $this->state([
+            'email' => $this->getGenerator()->unique()->userName() . '@unverified.test',
         ]);
     }
 }

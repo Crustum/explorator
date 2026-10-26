@@ -21,10 +21,10 @@ class WorkbenchFactoryTest extends TestCase
      */
     public function testSearchableUserFactoryPersist(): void
     {
-        $user = SearchableUserFactory::make([
+        $user = SearchableUserFactory::new([
             'name' => 'Factory Persist User',
             'email' => 'factory-persist@verified.test',
-        ])->persist();
+        ])->save();
 
         $this->assertInstanceOf(SearchableUser::class, $user);
         $this->assertNotEmpty($user->id);
@@ -36,9 +36,9 @@ class WorkbenchFactoryTest extends TestCase
      */
     public function testChirpFactoryPersist(): void
     {
-        $chirp = ChirpFactory::make([
+        $chirp = ChirpFactory::new([
             'content' => 'This chirp is searchable',
-        ])->persist();
+        ])->save();
 
         $this->assertInstanceOf(Chirp::class, $chirp);
         $this->assertNotEmpty($chirp->explorator_id);
@@ -50,11 +50,11 @@ class WorkbenchFactoryTest extends TestCase
      */
     public function testBookmarkFactoryPersistWithChirp(): void
     {
-        $bookmark = BookmarkFactory::make([
+        $bookmark = BookmarkFactory::new([
             'label' => 'cakephp',
         ])
             ->withChirp(['content' => 'This chirp is searchable'])
-            ->persist();
+            ->save();
 
         $this->assertInstanceOf(Bookmark::class, $bookmark);
         $this->assertSame('cakephp', $bookmark->label);

@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Crustum\Explorator\Test\Factory;
 
 use CakephpFixtureFactories\Factory\BaseFactory;
-use Faker\Generator;
+use CakephpFixtureFactories\Generator\GeneratorInterface;
 
 /**
  * Test factory for bookmarks (workbench BookmarkFactory).
  *
- * Uses vierge-noire/cakephp-fixture-factories (require-dev only).
+ * Uses dereuromark/cakephp-fixture-factories (require-dev only).
  */
 class BookmarkFactory extends BaseFactory
 {
@@ -22,14 +22,24 @@ class BookmarkFactory extends BaseFactory
     }
 
     /**
-     * @return void
+     * @param \CakephpFixtureFactories\Generator\GeneratorInterface $generator Generator
+     * @return array<string, mixed>
      */
-    protected function setDefaultTemplate(): void
+    public function definition(GeneratorInterface $generator): array
     {
-        $this->setDefaultData(fn(Generator $faker): array => [
-            'label' => $faker->word(),
-        ])
-            ->withChirp();
+        return [
+            'label' => $generator->word(),
+        ];
+    }
+
+    /**
+     * Default associated chirp (chirp_id is NOT NULL).
+     *
+     * @return static
+     */
+    protected function configure(): static
+    {
+        return $this->with('Chirps', ChirpFactory::new());
     }
 
     /**
@@ -41,6 +51,6 @@ class BookmarkFactory extends BaseFactory
      */
     public function withChirp(mixed $parameter = null, int $n = 1)
     {
-        return $this->with('Chirps', ChirpFactory::make($parameter ?? [], $n));
+        return $this->with('Chirps', ChirpFactory::new($parameter ?? [], $n));
     }
 }
