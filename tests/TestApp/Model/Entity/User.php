@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace TestApp\Model\Entity;
 
 use Cake\ORM\Entity;
+use Override;
 
 /**
  * Base user entity (workbench User stand-in).
@@ -11,17 +12,19 @@ use Cake\ORM\Entity;
 class User extends Entity
 {
     /**
-     * @var list<string>
+     * @var array<string, bool>
      */
-    protected array $_accessible = [
+    #[Override]
+    protected array $patchable = [
         '*' => true,
         'id' => false,
     ];
 
     /**
-     * @var list<string>
+     * @var array<string>
      */
-    protected array $_hidden = [
+    #[Override]
+    protected array $hidden = [
         'password',
     ];
 }

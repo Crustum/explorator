@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator\Command;
 
-use Cake\Console\Arguments;
-use Cake\Console\ConsoleIo;
 use Cake\Console\ConsoleOptionParser;
 use Override;
 
@@ -60,19 +58,19 @@ class ImportCommand extends ExploratorCommand
      * @inheritDoc
      */
     #[Override]
-    public function execute(Arguments $args, ConsoleIo $io): ?int
+    public function execute(): ?int
     {
-        $alias = (string)$args->getArgument('table');
+        $alias = (string)$this->args->getArgument('table');
         $table = $this->resolveSearchableTable($alias);
-        $chunk = $args->getOption('chunk');
+        $chunk = $this->args->getOption('chunk');
         $chunkSize = is_numeric($chunk) ? (int)$chunk : null;
 
-        if ($args->getOption('fresh')) {
+        if ($this->args->getOption('fresh')) {
             $this->flushSearchable($table, chunk: $chunkSize);
         }
 
         $this->importSearchable($table, chunk: $chunkSize);
-        $io->success(sprintf('All [%s] records have been imported.', $alias));
+        $this->io->success(sprintf('All [%s] records have been imported.', $alias));
 
         return static::CODE_SUCCESS;
     }

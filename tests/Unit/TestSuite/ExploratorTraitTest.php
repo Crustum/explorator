@@ -57,7 +57,7 @@ class ExploratorTraitTest extends FeatureTestCase
      */
     public function testAssertIndexed(): void
     {
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$this->makeUser(9)]);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([$this->makeUser(9)]);
 
         $this->assertIndexed('SearchableUsers');
         $this->assertIndexed('SearchableUsers', 9);
@@ -68,7 +68,7 @@ class ExploratorTraitTest extends FeatureTestCase
      */
     public function testAssertUpdatedInSearch(): void
     {
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$this->makeUser(9)]);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([$this->makeUser(9)]);
 
         $this->assertUpdatedInSearch('SearchableUsers', 9);
     }
@@ -78,7 +78,7 @@ class ExploratorTraitTest extends FeatureTestCase
      */
     public function testAssertNotIndexed(): void
     {
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$this->makeUser(1)]);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([$this->makeUser(1)]);
 
         $this->assertNotIndexed('Chirps');
         $this->assertNotIndexed('SearchableUsers', 99);
@@ -116,7 +116,7 @@ class ExploratorTraitTest extends FeatureTestCase
      */
     public function testAssertRemovedFromSearch(): void
     {
-        (new SearchableIndexer(new EngineManager()))->removeFromSearchSync([$this->makeUser(4)]);
+        new SearchableIndexer(new EngineManager())->removeFromSearchSync([$this->makeUser(4)]);
 
         $this->assertRemovedFromSearch('SearchableUsers', 4);
     }
@@ -127,7 +127,7 @@ class ExploratorTraitTest extends FeatureTestCase
     public function testAssertFlushed(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        (new EngineManager())->engine()->flush($table);
+        new EngineManager()->engine()->flush($table);
 
         $this->assertFlushed('SearchableUsers');
     }
@@ -148,7 +148,7 @@ class ExploratorTraitTest extends FeatureTestCase
         $indexer = new SearchableIndexer(new EngineManager());
         $indexer->makeSearchableSync([$this->makeUser(1)]);
         $indexer->removeFromSearchSync([$this->makeUser(2)]);
-        (new EngineManager())->engine()->flush($this->getTableLocator()->get('SearchableUsers'));
+        new EngineManager()->engine()->flush($this->getTableLocator()->get('SearchableUsers'));
 
         $this->assertWriteCount(3);
     }
@@ -158,7 +158,7 @@ class ExploratorTraitTest extends FeatureTestCase
      */
     public function testAssertIndexedPayloadContains(): void
     {
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([
             $this->makeUser(9, 'Grace'),
         ]);
 
@@ -172,7 +172,7 @@ class ExploratorTraitTest extends FeatureTestCase
     public function testAssertSearchPerformed(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        (new EngineManager())->engine()->search(new Builder($table, 'example'));
+        new EngineManager()->engine()->search(new Builder($table, 'example'));
 
         $this->assertSearchPerformed();
         $this->assertSearchPerformed('example');
@@ -184,7 +184,7 @@ class ExploratorTraitTest extends FeatureTestCase
      */
     public function testAssertSearchNotPerformed(): void
     {
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$this->makeUser(1)]);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([$this->makeUser(1)]);
 
         $this->assertSearchNotPerformed();
     }
@@ -195,7 +195,7 @@ class ExploratorTraitTest extends FeatureTestCase
     public function testAssertSearchCount(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        $engine = (new EngineManager())->engine();
+        $engine = new EngineManager()->engine();
         $builder = new Builder($table, 'example');
         $engine->search($builder);
         $engine->paginate($builder, 15, 1);
@@ -226,9 +226,9 @@ class ExploratorTraitTest extends FeatureTestCase
     public function testGetExploratorWrites(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        $engine = (new EngineManager())->engine();
+        $engine = new EngineManager()->engine();
         $engine->search(new Builder($table, 'q'));
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$this->makeUser(1)]);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([$this->makeUser(1)]);
 
         $this->assertCount(1, $this->getExploratorWrites());
     }
@@ -239,8 +239,8 @@ class ExploratorTraitTest extends FeatureTestCase
     public function testGetExploratorSearches(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        (new EngineManager())->engine()->search(new Builder($table, 'q'));
-        (new EngineManager())->engine()->paginate(new Builder($table, 'q'), 10, 1);
+        new EngineManager()->engine()->search(new Builder($table, 'q'));
+        new EngineManager()->engine()->paginate(new Builder($table, 'q'), 10, 1);
 
         $this->assertCount(2, $this->getExploratorSearches());
     }
@@ -265,7 +265,7 @@ class ExploratorTraitTest extends FeatureTestCase
     {
         $this->assertCount(0, $this->getExploratorOperations());
 
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$this->makeUser(1)]);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([$this->makeUser(1)]);
 
         $this->assertCount(1, $this->getExploratorOperations());
     }
@@ -304,7 +304,7 @@ class ExploratorTraitTest extends FeatureTestCase
         ];
 
         try {
-            (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$entity]);
+            new SearchableIndexer(new EngineManager())->makeSearchableSync([$entity]);
 
             $operations = $this->getExploratorOperations();
             $payload = $operations[0]['payloads'][0];
@@ -330,7 +330,7 @@ class ExploratorTraitTest extends FeatureTestCase
     public function testNothingWrittenIgnoresSearches(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        (new EngineManager())->engine()->search(new Builder($table, 'only-search'));
+        new EngineManager()->engine()->search(new Builder($table, 'only-search'));
 
         $this->assertNothingWritten();
         $this->assertSearchCount(1);

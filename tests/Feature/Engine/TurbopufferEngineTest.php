@@ -177,7 +177,7 @@ class TurbopufferEngineTest extends FeatureTestCase
     {
         $this->expectException(ExploratorException::class);
 
-        (new TurbopufferClient($this->httpReturning([]), []))->namespace('invalid namespace!');
+        new TurbopufferClient($this->httpReturning([]), [])->namespace('invalid namespace!');
     }
 
     /**
@@ -278,7 +278,7 @@ class TurbopufferEngineTest extends FeatureTestCase
             ],
         ]);
 
-        $builder = (new Builder($this->SearchableUsers, 'zonda'))->hybrid(1, 1);
+        $builder = new Builder($this->SearchableUsers, 'zonda')->hybrid(1, 1);
 
         $parameters = $this->engine->buildSearchParameters($builder, 10);
 
@@ -319,7 +319,7 @@ class TurbopufferEngineTest extends FeatureTestCase
 
         $this->createUserQuietly(['name' => 'zonda']);
 
-        $results = $this->engine->search((new Builder($this->SearchableUsers, 'zonda'))->semantic());
+        $results = $this->engine->search(new Builder($this->SearchableUsers, 'zonda')->semantic());
 
         $this->assertSame('1', (string)$results['rows'][0]['id']);
     }

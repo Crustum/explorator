@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator\Command;
 
-use Cake\Console\Arguments;
-use Cake\Console\ConsoleIo;
 use Cake\Console\ConsoleOptionParser;
 use Cake\Core\Configure;
 use Cake\ORM\Locator\LocatorAwareTrait;
@@ -56,13 +54,13 @@ class SyncIndexSettingsCommand extends ExploratorCommand
      * @inheritDoc
      */
     #[Override]
-    public function execute(Arguments $args, ConsoleIo $io): ?int
+    public function execute(): ?int
     {
-        $driver = (string)($args->getOption('driver') ?: Configure::read('Explorator.driver', 'null'));
-        $engine = (new EngineManager())->engine($driver);
+        $driver = (string)($this->args->getOption('driver') ?: Configure::read('Explorator.driver', 'null'));
+        $engine = new EngineManager()->engine($driver);
 
         if (!$engine instanceof UpdatesIndexSettings) {
-            $io->error(sprintf('The "%s" engine does not support updating index settings.', $driver));
+            $this->io->error(sprintf('The "%s" engine does not support updating index settings.', $driver));
 
             return static::CODE_ERROR;
         }
@@ -70,7 +68,7 @@ class SyncIndexSettingsCommand extends ExploratorCommand
         try {
             $indexes = (array)Configure::read('Explorator.' . $driver . '.index-settings', []);
             if ($indexes === []) {
-                $io->info(sprintf('No index settings found for the "%s" engine.', $driver));
+                $this->io->info(sprintf('No index settings found for the "%s" engine.', $driver));
 
                 return static::CODE_SUCCESS;
             }
@@ -99,10 +97,10 @@ class SyncIndexSettingsCommand extends ExploratorCommand
 
                 $indexName = $this->indexName(is_string($name) ? $name : (string)$name, $table);
                 $engine->updateIndexSettings($indexName, $settings);
-                $io->success(sprintf('Settings for the [%s] index synced successfully.', $indexName));
+                $this->io->success(sprintf('Settings for the [%s] index synced successfully.', $indexName));
             }
         } catch (Throwable $throwable) {
-            $io->error($throwable->getMessage());
+            $this->io->error($throwable->getMessage());
 
             return static::CODE_ERROR;
         }

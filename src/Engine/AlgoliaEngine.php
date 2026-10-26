@@ -177,8 +177,6 @@ abstract class AlgoliaEngine extends Engine implements UpdatesIndexSettings
         $keyName = method_exists($builder->table, 'getExploratorKeyName')
             ? $builder->table->getExploratorKeyName()
             : 'id';
-
-        $hydrated = [];
         if (method_exists($builder->table, 'getExploratorModelsByIds')) {
             $hydrated = $builder->table->getExploratorModelsByIds($builder, $ids)->toList();
         } else {

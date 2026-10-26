@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator\Command;
 
-use Cake\Console\Arguments;
-use Cake\Console\ConsoleIo;
 use Cake\Console\ConsoleOptionParser;
 use Override;
 
@@ -51,13 +49,13 @@ class FlushCommand extends ExploratorCommand
      * @inheritDoc
      */
     #[Override]
-    public function execute(Arguments $args, ConsoleIo $io): ?int
+    public function execute(): ?int
     {
-        $alias = (string)$args->getArgument('table');
+        $alias = (string)$this->args->getArgument('table');
         $table = $this->resolveSearchableTable($alias);
         $this->flushSearchable($table);
 
-        $io->success(sprintf('All [%s] records have been flushed.', $alias));
+        $this->io->success(sprintf('All [%s] records have been flushed.', $alias));
 
         return static::CODE_SUCCESS;
     }

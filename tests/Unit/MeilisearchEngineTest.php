@@ -121,7 +121,7 @@ class MeilisearchEngineTest extends TestCase
         };
         $GLOBALS['explorator_meili_unit_engine'] = $engine;
 
-        $keys = (new Builder($table, 'q'))->keys();
+        $keys = new Builder($table, 'q')->keys();
         $this->assertSame(['a', 'b'], $keys->toList());
         unset($GLOBALS['explorator_meili_unit_engine']);
     }
@@ -259,7 +259,7 @@ class MeilisearchEngineTest extends TestCase
         $client = m::mock(Client::class);
         $client->shouldNotReceive('index');
 
-        (new MeilisearchEngine($client))->update([]);
+        new MeilisearchEngine($client)->update([]);
         $this->assertTrue(true);
     }
 
@@ -268,7 +268,7 @@ class MeilisearchEngineTest extends TestCase
      */
     public function testEngineReturnsHitsEntryFromSearchResponse(): void
     {
-        $this->assertSame(3, (new MeilisearchEngine(m::mock(Client::class)))->getTotalCount([
+        $this->assertSame(3, new MeilisearchEngine(m::mock(Client::class))->getTotalCount([
             'totalHits' => 3,
         ]));
     }
@@ -284,7 +284,7 @@ class MeilisearchEngineTest extends TestCase
         $index->shouldReceive('updateSettings')->with(['searchableAttributes' => ['title']])->once();
         $index->shouldReceive('updateEmbedders')->with(['default' => ['source' => 'openAi']])->once();
 
-        (new MeilisearchEngine($client))->updateIndexSettings('test_index', [
+        new MeilisearchEngine($client)->updateIndexSettings('test_index', [
             'searchableAttributes' => ['title'],
             'embedders' => ['default' => ['source' => 'openAi']],
         ]);
@@ -314,6 +314,6 @@ class MeilisearchEngineTest extends TestCase
             $prefixedIndex,
         ]);
 
-        (new MeilisearchEngine($client))->deleteAllIndexes();
+        new MeilisearchEngine($client)->deleteAllIndexes();
     }
 }

@@ -81,7 +81,7 @@ class SearchableTest extends FeatureTestCase
         $manager = m::mock(EngineManager::class);
         $manager->shouldReceive('engine')->andReturn($engine);
 
-        (new SearchableIndexer($manager))->makeSearchableSync([$this->entityUsing($engine)]);
+        new SearchableIndexer($manager)->makeSearchableSync([$this->entityUsing($engine)]);
     }
 
     /**
@@ -96,7 +96,7 @@ class SearchableTest extends FeatureTestCase
         $entity->setSource('SearchableUsers');
         $entity->set('id', 9);
 
-        (new SearchableIndexer($manager))->makeSearchable([$entity]);
+        new SearchableIndexer($manager)->makeSearchable([$entity]);
 
         $this->assertJobQueuedWith(MakeSearchableJob::class, [
             'source' => 'SearchableUsers',
@@ -160,7 +160,7 @@ class SearchableTest extends FeatureTestCase
 
         $manager = m::mock(EngineManager::class);
 
-        (new SearchableIndexer($manager))->makeSearchableSync([]);
+        new SearchableIndexer($manager)->makeSearchableSync([]);
     }
 
     /**
@@ -171,7 +171,7 @@ class SearchableTest extends FeatureTestCase
         Configure::write('Explorator.queue', true);
         $manager = m::mock(EngineManager::class);
 
-        (new SearchableIndexer($manager))->makeSearchable([]);
+        new SearchableIndexer($manager)->makeSearchable([]);
         $this->assertNoJobsQueued();
     }
 
@@ -200,7 +200,7 @@ class SearchableTest extends FeatureTestCase
         $entity->setSource('SearchableUsers');
         $entity->set('id', 1);
 
-        (new SearchableIndexer($manager))->makeSearchable([$entity]);
+        new SearchableIndexer($manager)->makeSearchable([$entity]);
         $this->assertJobQueuedTimes($customClass, 1);
     }
 
@@ -213,7 +213,7 @@ class SearchableTest extends FeatureTestCase
         $engine->shouldReceive('delete')->once();
         $manager = m::mock(EngineManager::class);
 
-        (new SearchableIndexer($manager))->removeFromSearchSync([$this->entityUsing($engine)]);
+        new SearchableIndexer($manager)->removeFromSearchSync([$this->entityUsing($engine)]);
     }
 
     /**
@@ -228,7 +228,7 @@ class SearchableTest extends FeatureTestCase
         $entity->setSource('SearchableUsers');
         $entity->set('id', 4);
 
-        (new SearchableIndexer($manager))->removeFromSearch([$entity]);
+        new SearchableIndexer($manager)->removeFromSearch([$entity]);
         $this->assertJobQueuedWith(RemoveFromSearchJob::class, [
             'source' => 'SearchableUsers',
             'ids' => [4],
@@ -245,7 +245,7 @@ class SearchableTest extends FeatureTestCase
 
         $manager = m::mock(EngineManager::class);
 
-        (new SearchableIndexer($manager))->removeFromSearchSync([]);
+        new SearchableIndexer($manager)->removeFromSearchSync([]);
     }
 
     /**
@@ -256,7 +256,7 @@ class SearchableTest extends FeatureTestCase
         Configure::write('Explorator.queue', true);
         $manager = m::mock(EngineManager::class);
 
-        (new SearchableIndexer($manager))->removeFromSearch([]);
+        new SearchableIndexer($manager)->removeFromSearch([]);
         $this->assertNoJobsQueued();
     }
 
@@ -285,7 +285,7 @@ class SearchableTest extends FeatureTestCase
         $entity->setSource('SearchableUsers');
         $entity->set('id', 2);
 
-        (new SearchableIndexer($manager))->removeFromSearch([$entity]);
+        new SearchableIndexer($manager)->removeFromSearch([$entity]);
         $this->assertJobQueuedTimes($customClass, 1);
     }
 
@@ -310,7 +310,7 @@ class SearchableTest extends FeatureTestCase
         $entity->set('deleted', null, ['asOriginal' => true]);
         $entity->setNew(false);
 
-        $entity->set('published_at');
+        $entity->set('published_at', null);
 
         $this->assertTrue($entity->wasSearchableBeforeUpdate());
         $this->assertFalse($entity->shouldBeSearchable());
@@ -409,7 +409,7 @@ class SearchableTest extends FeatureTestCase
         };
         $this->getTableLocator()->set('SearchableUsers', $table);
 
-        (new SearchableIndexer($manager))->importSearchable($table, chunk: 10);
+        new SearchableIndexer($manager)->importSearchable($table, chunk: 10);
         $this->assertCount(2, $seen);
         $this->assertTrue($seen[0] < $seen[1]);
     }

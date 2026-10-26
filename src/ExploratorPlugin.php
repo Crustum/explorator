@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator;
 
+use Cake\Container\ContainerInterface;
 use Cake\Core\BasePlugin;
 use Cake\Core\Configure;
-use Cake\Core\ContainerInterface;
 use Cake\Core\PluginApplicationInterface;
 use Cake\Http\MiddlewareQueue;
 use Crustum\Explorator\Engine\CollectionEngine;
@@ -68,7 +68,7 @@ class ExploratorPlugin extends BasePlugin
     /**
      * Register Explorator engine manager and local engines.
      *
-     * @param \Cake\Core\ContainerInterface $container Application container
+     * @param \Cake\Container\ContainerInterface $container Application container
      * @return void
      */
     public function services(ContainerInterface $container): void

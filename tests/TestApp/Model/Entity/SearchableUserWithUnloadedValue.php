@@ -33,7 +33,7 @@ class SearchableUserWithUnloadedValue extends SearchableUser
     #[Override]
     public function makeSearchableUsing(iterable $entities): CollectionInterface
     {
-        return collection($entities)->each(function (SearchableUserWithUnloadedValue $entity): void {
+        return collection($entities)->each(function (self $entity): void {
             $entity->unloadedValue = 'loaded';
         });
     }

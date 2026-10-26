@@ -161,7 +161,7 @@ class Builder
      * @param \Crustum\Explorator\EngineManager $engineManager Engine manager
      * @return $this
      */
-    public function setEngineManager(EngineManager $engineManager)
+    public function setEngineManager(EngineManager $engineManager): static
     {
         $this->engineManager = $engineManager;
 
@@ -172,7 +172,7 @@ class Builder
      * @param string $index Index name
      * @return $this
      */
-    public function within(string $index)
+    public function within(string $index): static
     {
         $this->index = $index;
 
@@ -185,7 +185,7 @@ class Builder
      * @param mixed|null $value Compared value
      * @return $this
      */
-    public function where(string $field, mixed $operator, mixed $value = null)
+    public function where(string $field, mixed $operator, mixed $value = null): static
     {
         $this->wheres[] = [
             'field' => $field,
@@ -201,7 +201,7 @@ class Builder
      * @param iterable<mixed> $values Values
      * @return $this
      */
-    public function whereIn(string $field, iterable $values)
+    public function whereIn(string $field, iterable $values): static
     {
         $this->whereIns[$field] = array_values(is_array($values) ? $values : iterator_to_array($values));
 
@@ -213,7 +213,7 @@ class Builder
      * @param iterable<mixed> $values Values
      * @return $this
      */
-    public function whereNotIn(string $field, iterable $values)
+    public function whereNotIn(string $field, iterable $values): static
     {
         $this->whereNotIns[$field] = array_values(is_array($values) ? $values : iterator_to_array($values));
 
@@ -223,7 +223,7 @@ class Builder
     /**
      * @return $this
      */
-    public function withTrashed()
+    public function withTrashed(): static
     {
         $this->wheres = array_values(array_filter(
             $this->wheres,
@@ -236,7 +236,7 @@ class Builder
     /**
      * @return $this
      */
-    public function onlyTrashed()
+    public function onlyTrashed(): static
     {
         $this->withTrashed();
         $this->wheres[] = [
@@ -252,7 +252,7 @@ class Builder
      * @param int $limit Limit
      * @return $this
      */
-    public function take(int $limit)
+    public function take(int $limit): static
     {
         $this->limit = $limit;
 
@@ -264,7 +264,7 @@ class Builder
      * @param string $direction Direction
      * @return $this
      */
-    public function orderBy(string $column, string $direction = 'asc')
+    public function orderBy(string $column, string $direction = 'asc'): static
     {
         $this->orders[] = [
             'column' => $column,
@@ -278,7 +278,7 @@ class Builder
      * @param string $column Column
      * @return $this
      */
-    public function orderByDesc(string $column)
+    public function orderByDesc(string $column): static
     {
         return $this->orderBy($column, 'desc');
     }
@@ -287,7 +287,7 @@ class Builder
      * @param string|null $column Created-at column
      * @return $this
      */
-    public function latest(?string $column = null)
+    public function latest(?string $column = null): static
     {
         $column ??= $this->createdAtColumn();
 
@@ -298,7 +298,7 @@ class Builder
      * @param string|null $column Created-at column
      * @return $this
      */
-    public function oldest(?string $column = null)
+    public function oldest(?string $column = null): static
     {
         $column ??= $this->createdAtColumn();
 
@@ -309,7 +309,7 @@ class Builder
      * @param array<string, mixed> $options Options
      * @return $this
      */
-    public function options(array $options)
+    public function options(array $options): static
     {
         $this->options = $options;
 
@@ -322,7 +322,7 @@ class Builder
      * @param float|null $minSimilarity Minimum similarity threshold
      * @return $this
      */
-    public function semantic(?float $minSimilarity = null)
+    public function semantic(?float $minSimilarity = null): static
     {
         $this->semanticSearch = true;
         $this->minimumSimilarity = $minSimilarity;
@@ -338,7 +338,7 @@ class Builder
      * @param float|null $minSimilarity Minimum similarity threshold
      * @return $this
      */
-    public function hybrid(int $textWeight = 1, int $semanticWeight = 1, ?float $minSimilarity = null)
+    public function hybrid(int $textWeight = 1, int $semanticWeight = 1, ?float $minSimilarity = null): static
     {
         $this->hybridSearch = [
             'text_weight' => $textWeight,
@@ -353,7 +353,7 @@ class Builder
      * @param callable $callback Query callback
      * @return $this
      */
-    public function query(callable $callback)
+    public function query(callable $callback): static
     {
         $this->queryCallback = Closure::fromCallable($callback);
 
@@ -364,7 +364,7 @@ class Builder
      * @param callable $callback Builder callback
      * @return $this
      */
-    public function tap(callable $callback)
+    public function tap(callable $callback): static
     {
         $callback($this);
 
@@ -389,7 +389,7 @@ class Builder
      * @param callable $callback After-raw callback
      * @return $this
      */
-    public function withRawResults(callable $callback)
+    public function withRawResults(callable $callback): static
     {
         $this->afterRawSearchCallback = Closure::fromCallable($callback);
 

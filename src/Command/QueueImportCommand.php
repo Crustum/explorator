@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator\Command;
 
-use Cake\Console\Arguments;
-use Cake\Console\ConsoleIo;
 use Cake\Console\ConsoleOptionParser;
 use Cake\Core\Configure;
 use Crustum\Explorator\Explorator;
@@ -67,14 +65,14 @@ class QueueImportCommand extends ExploratorCommand
      * @inheritDoc
      */
     #[Override]
-    public function execute(Arguments $args, ConsoleIo $io): ?int
+    public function execute(): ?int
     {
-        $alias = (string)$args->getArgument('table');
+        $alias = (string)$this->args->getArgument('table');
         $table = $this->resolveSearchableTable($alias);
         $keyName = $this->exploratorKeyName($table);
 
-        $minOpt = $args->getOption('min');
-        $maxOpt = $args->getOption('max');
+        $minOpt = $this->args->getOption('min');
+        $maxOpt = $this->args->getOption('max');
         $min = is_numeric($minOpt)
             ? (int)$minOpt
             : (int)$table->find()->select([$keyName])->orderBy([$keyName => 'ASC'])->first()?->get($keyName);
@@ -82,20 +80,20 @@ class QueueImportCommand extends ExploratorCommand
             ? (int)$maxOpt
             : (int)$table->find()->select([$keyName])->orderBy([$keyName => 'DESC'])->first()?->get($keyName);
 
-        $chunkOpt = $args->getOption('chunk');
+        $chunkOpt = $this->args->getOption('chunk');
         $chunk = is_numeric($chunkOpt) && (int)$chunkOpt > 0
             ? (int)$chunkOpt
             : max(1, (int)Configure::read('Explorator.chunk.searchable', 500));
-        $order = strtolower((string)($args->getOption('order') ?: 'asc'));
+        $order = strtolower((string)($this->args->getOption('order') ?: 'asc'));
 
         if (!in_array($order, ['asc', 'desc'], true)) {
-            $io->error('The order option must be either "asc" or "desc".');
+            $this->io->error('The order option must be either "asc" or "desc".');
 
             return static::CODE_ERROR;
         }
 
         if ($max < $min || (!is_numeric($minOpt) && !is_numeric($maxOpt) && ($min < 1 || $max < 1))) {
-            $io->out(sprintf('No records found for [%s].', $alias));
+            $this->io->out(sprintf('No records found for [%s].', $alias));
 
             return static::CODE_SUCCESS;
         }
@@ -111,7 +109,7 @@ class QueueImportCommand extends ExploratorCommand
             }
         }
 
-        $queueOption = $args->getOption('queue');
+        $queueOption = $this->args->getOption('queue');
         $queue = is_string($queueOption) && $queueOption !== ''
             ? $queueOption
             : (method_exists($table, 'syncWithSearchUsingQueue') ? $table->syncWithSearchUsingQueue() : null);
@@ -136,10 +134,10 @@ class QueueImportCommand extends ExploratorCommand
                 'end' => $end,
             ], $messageArgs), $pushOptions);
             $direction = $order === 'asc' ? 'up to' : 'down to';
-            $io->out(sprintf('Queued [%s] models %s ID: %d', $alias, $direction, $order === 'asc' ? $end : $start));
+            $this->io->out(sprintf('Queued [%s] models %s ID: %d', $alias, $direction, $order === 'asc' ? $end : $start));
         }
 
-        $io->success(sprintf('%d records have been queued for [%s].', count($ranges), $alias));
+        $this->io->success(sprintf('%d records have been queued for [%s].', count($ranges), $alias));
 
         return static::CODE_SUCCESS;
     }

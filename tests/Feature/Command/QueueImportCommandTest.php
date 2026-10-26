@@ -3,9 +3,7 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator\Test\Feature\Command;
 
-use Cake\Console\Arguments;
-use Cake\Console\ConsoleIo;
-use Cake\Console\TestSuite\StubConsoleOutput;
+use Cake\Console\TestSuite\ConsoleIntegrationTestTrait;
 use Cake\Core\Configure;
 use Cake\I18n\DateTime;
 use Cake\Queue\Job\Message;
@@ -24,6 +22,7 @@ use TestApp\Model\Table\SearchableUsersTable;
  */
 class QueueImportCommandTest extends FeatureTestCase
 {
+    use ConsoleIntegrationTestTrait;
     use QueueTrait;
 
     /**
@@ -68,21 +67,6 @@ class QueueImportCommandTest extends FeatureTestCase
     }
 
     /**
-     * @param array<string, mixed> $options Command options
-     * @return array{0: int|null, 1: string}
-     */
-    protected function runCommand(array $options = []): array
-    {
-        $command = new QueueImportCommand();
-        $args = new Arguments(['SearchableUsers'], $options, ['table']);
-        $out = new StubConsoleOutput();
-        $err = new StubConsoleOutput();
-        $io = new ConsoleIo($out, $err);
-
-        return [$command->execute($args, $io), implode("\n", array_merge($out->messages(), $err->messages()))];
-    }
-
-    /**
      * @param callable(array<string, mixed>): bool $callback Job matcher
      * @return bool
      */
@@ -100,10 +84,10 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testRejectsInvalidOrder(): void
     {
         $this->createUsers(3);
-        [$code, $output] = $this->runCommand(['order' => 'sideways']);
+        $this->exec('explorator queue-import SearchableUsers --order=sideways');
 
-        $this->assertSame(QueueImportCommand::CODE_ERROR, $code);
-        $this->assertStringContainsString('asc" or "desc"', $output);
+        $this->assertExitCode(QueueImportCommand::CODE_ERROR);
+        $this->assertErrorContains('asc" or "desc"');
         $this->assertNoJobsQueued();
     }
 
@@ -112,10 +96,10 @@ class QueueImportCommandTest extends FeatureTestCase
      */
     public function testEmptyTableSucceedsWithoutQueueing(): void
     {
-        [$code, $output] = $this->runCommand(['order' => 'asc']);
+        $this->exec('explorator queue-import SearchableUsers --order=asc');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
-        $this->assertStringContainsString('No records found', $output);
+        $this->assertExitSuccess();
+        $this->assertOutputContains('No records found');
         $this->assertNoJobsQueued();
     }
 
@@ -125,11 +109,11 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testProcessesModelsWithRecords(): void
     {
         $this->createUsers(5);
-        [$code, $output] = $this->runCommand();
+        $this->exec('explorator queue-import SearchableUsers');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
-        $this->assertStringContainsString('models up to ID: 5', $output);
-        $this->assertStringContainsString('records have been queued', $output);
+        $this->assertExitSuccess();
+        $this->assertOutputContains('models up to ID: 5');
+        $this->assertOutputContains('records have been queued');
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 1);
     }
 
@@ -139,11 +123,11 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testUsesCustomChunkSize(): void
     {
         $this->createUsers(10);
-        [$code, $output] = $this->runCommand(['chunk' => '2']);
+        $this->exec('explorator queue-import SearchableUsers --chunk=2');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
-        $this->assertStringContainsString('models up to ID: 2', $output);
-        $this->assertStringContainsString('models up to ID: 10', $output);
+        $this->assertExitSuccess();
+        $this->assertOutputContains('models up to ID: 2');
+        $this->assertOutputContains('models up to ID: 10');
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 5);
     }
 
@@ -153,9 +137,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testQueuesRangesInDescendingOrder(): void
     {
         $this->createUsers(8);
-        [$code] = $this->runCommand(['chunk' => '3', 'order' => 'desc']);
+        $this->exec('explorator queue-import SearchableUsers --chunk=3 --order=desc');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $ranges = array_map(
             static fn(array $row): array => [$row['data']['start'], $row['data']['end']],
             $this->getQueuedJobsByClass(MakeRangeSearchableJob::class),
@@ -169,9 +153,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testUsesDefaultChunkSizeWhenNotSpecified(): void
     {
         $this->createUsers(3);
-        [$code] = $this->runCommand();
+        $this->exec('explorator queue-import SearchableUsers');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 1);
     }
 
@@ -181,9 +165,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testProcessesLargeDatasetWithChunking(): void
     {
         $this->createUsers(25);
-        [$code] = $this->runCommand(['chunk' => '10']);
+        $this->exec('explorator queue-import SearchableUsers --chunk=10');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 3);
     }
 
@@ -193,10 +177,10 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testHandlesSingleRecord(): void
     {
         $this->createUsers(1);
-        [$code, $output] = $this->runCommand();
+        $this->exec('explorator queue-import SearchableUsers');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
-        $this->assertStringContainsString('models up to ID: 1', $output);
+        $this->assertExitSuccess();
+        $this->assertOutputContains('models up to ID: 1');
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 1);
     }
 
@@ -207,9 +191,9 @@ class QueueImportCommandTest extends FeatureTestCase
     {
         Configure::write('Explorator.chunk.searchable', 3);
         $this->createUsers(7);
-        [$code] = $this->runCommand();
+        $this->exec('explorator queue-import SearchableUsers');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 3);
     }
 
@@ -222,10 +206,10 @@ class QueueImportCommandTest extends FeatureTestCase
         $this->SearchableUsers->delete($this->SearchableUsers->get(2));
         $this->SearchableUsers->delete($this->SearchableUsers->get(4));
 
-        [$code, $output] = $this->runCommand();
+        $this->exec('explorator queue-import SearchableUsers');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
-        $this->assertStringContainsString('models up to ID: 6', $output);
+        $this->assertExitSuccess();
+        $this->assertOutputContains('models up to ID: 6');
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 1);
     }
 
@@ -235,9 +219,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testHandlesChunkSizeLargerThanDataset(): void
     {
         $this->createUsers(3);
-        [$code] = $this->runCommand(['chunk' => '10']);
+        $this->exec('explorator queue-import SearchableUsers --chunk=10');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 1);
     }
 
@@ -247,9 +231,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testHandlesChunkSizeOfOne(): void
     {
         $this->createUsers(3);
-        [$code] = $this->runCommand(['chunk' => '1']);
+        $this->exec('explorator queue-import SearchableUsers --chunk=1');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 3);
     }
 
@@ -259,9 +243,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testDispatchesJobsWithCorrectParameters(): void
     {
         $this->createUsers(5);
-        [$code] = $this->runCommand(['chunk' => '3']);
+        $this->exec('explorator queue-import SearchableUsers --chunk=3');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedWith(MakeRangeSearchableJob::class, [
             'source' => 'SearchableUsers',
             'start' => 1,
@@ -281,10 +265,7 @@ class QueueImportCommandTest extends FeatureTestCase
     {
         $this->expectException(ExploratorException::class);
 
-        $command = new QueueImportCommand();
-        $args = new Arguments(['NotARealTable'], [], ['table']);
-        $io = new ConsoleIo(new StubConsoleOutput(), new StubConsoleOutput());
-        $command->execute($args, $io);
+        $this->exec('explorator queue-import NotARealTable');
     }
 
     /**
@@ -293,10 +274,10 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testHandlesZeroChunkSize(): void
     {
         $this->createUsers(3);
-        [$code, $output] = $this->runCommand(['chunk' => '0']);
+        $this->exec('explorator queue-import SearchableUsers --chunk=0');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
-        $this->assertStringContainsString('ID: 3', $output);
+        $this->assertExitSuccess();
+        $this->assertOutputContains('ID: 3');
         $this->assertJobQueued(MakeRangeSearchableJob::class);
     }
 
@@ -306,9 +287,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testAcceptsCustomMinOption(): void
     {
         $this->createUsers(10);
-        [$code] = $this->runCommand(['min' => '5']);
+        $this->exec('explorator queue-import SearchableUsers --min=5');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedWith(MakeRangeSearchableJob::class, [
             'source' => 'SearchableUsers',
             'start' => 5,
@@ -322,9 +303,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testAcceptsCustomMaxOption(): void
     {
         $this->createUsers(10);
-        [$code] = $this->runCommand(['max' => '5']);
+        $this->exec('explorator queue-import SearchableUsers --max=5');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedWith(MakeRangeSearchableJob::class, [
             'source' => 'SearchableUsers',
             'start' => 1,
@@ -338,9 +319,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testAcceptsBothMinAndMaxOptions(): void
     {
         $this->createUsers(10);
-        [$code] = $this->runCommand(['min' => '3', 'max' => '7']);
+        $this->exec('explorator queue-import SearchableUsers --min=3 --max=7');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedWith(MakeRangeSearchableJob::class, [
             'source' => 'SearchableUsers',
             'start' => 3,
@@ -354,9 +335,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testChunksCustomRangeCorrectly(): void
     {
         $this->createUsers(10);
-        [$code] = $this->runCommand(['min' => '2', 'max' => '8', 'chunk' => '3']);
+        $this->exec('explorator queue-import SearchableUsers --min=2 --max=8 --chunk=3');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 3);
     }
 
@@ -366,10 +347,10 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testHandlesAnEmptyIdRange(): void
     {
         $this->createUsers(5);
-        [$code, $output] = $this->runCommand(['min' => '5', 'max' => '2']);
+        $this->exec('explorator queue-import SearchableUsers --min=5 --max=2');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
-        $this->assertStringContainsString('No records found', $output);
+        $this->assertExitSuccess();
+        $this->assertOutputContains('No records found');
         $this->assertNoJobsQueued();
     }
 
@@ -379,9 +360,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testHandlesNegativeMinOption(): void
     {
         $this->createUsers(3);
-        [$code] = $this->runCommand(['min' => '-5', 'max' => '2']);
+        $this->exec('explorator queue-import SearchableUsers --min=-5 --max=2');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedWith(MakeRangeSearchableJob::class, [
             'source' => 'SearchableUsers',
             'start' => -5,
@@ -395,9 +376,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testAcceptsCustomQueueOption(): void
     {
         $this->createUsers(10);
-        [$code] = $this->runCommand(['queue' => 'custom-queue']);
+        $this->exec('explorator queue-import SearchableUsers --queue=custom-queue');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedToQueue('custom-queue', MakeRangeSearchableJob::class);
         $this->assertTrue($this->hasQueuedMakeRange(
             static fn(array $row): bool => ($row['data']['start'] ?? null) === 1
@@ -412,14 +393,9 @@ class QueueImportCommandTest extends FeatureTestCase
     public function testCanAcceptAllOptions(): void
     {
         $this->createUsers(20);
-        [$code] = $this->runCommand([
-            'min' => '5',
-            'max' => '15',
-            'chunk' => '4',
-            'queue' => 'custom-queue',
-        ]);
+        $this->exec('explorator queue-import SearchableUsers --min=5 --max=15 --chunk=4 --queue=custom-queue');
 
-        $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+        $this->assertExitSuccess();
         $this->assertJobQueuedTimes(MakeRangeSearchableJob::class, 3);
         $this->assertJobQueuedToQueue('custom-queue', MakeRangeSearchableJob::class);
         $this->assertTrue($this->hasQueuedMakeRange(
@@ -449,9 +425,9 @@ class QueueImportCommandTest extends FeatureTestCase
         Configure::write('Explorator.queue', ['connection' => 'sync', 'queue' => 'scout']);
         QueueManager::setConfig('sync', (array)QueueManager::getConfig('default'));
         try {
-            [$code] = $this->runCommand(['queue' => 'custom-queue']);
+            $this->exec('explorator queue-import SearchableUsers --queue=custom-queue');
 
-            $this->assertSame(QueueImportCommand::CODE_SUCCESS, $code);
+            $this->assertExitSuccess();
 
             $ranges = $this->getQueuedJobsByClass(MakeRangeSearchableJob::class);
             $this->assertCount(1, $ranges);
@@ -464,7 +440,7 @@ class QueueImportCommandTest extends FeatureTestCase
             $message->shouldReceive('getArgument')->with('queue', '')->andReturn($data['queue'] ?? '');
             $message->shouldReceive('getArgument')->with('connection', '')->andReturn($data['connection'] ?? '');
 
-            (new MakeRangeSearchableJob())->execute($message);
+            new MakeRangeSearchableJob()->execute($message);
 
             $this->assertJobQueuedTimes(MakeSearchableJob::class, 1);
             $this->assertJobQueuedToQueue('custom-queue', MakeSearchableJob::class);

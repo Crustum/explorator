@@ -52,7 +52,7 @@ class MatchAgainstExpression implements ExpressionInterface
     /**
      * @inheritDoc
      */
-    public function traverse(Closure $callback)
+    public function traverse(Closure $callback): static
     {
         foreach ($this->columns as $column) {
             $callback($column);

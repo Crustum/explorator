@@ -69,7 +69,7 @@ class TypesenseSearchableTest extends IntegrationTestCase
 
         $this->setUpSearchableSuite();
 
-        $engine = (new EngineManager())->engine('typesense');
+        $engine = new EngineManager()->engine('typesense');
         $indexName = $this->SearchableUsers->searchableAs();
         try {
             $engine->deleteIndex($indexName);
@@ -465,7 +465,7 @@ class TypesenseSearchableTest extends IntegrationTestCase
             $this->assertGreaterThan(4000, strlen(implode(', ', $catVector)));
 
             $results = $engine->search(
-                (new Builder($table, 'a relaxed pet'))
+                new Builder($table, 'a relaxed pet')
                     ->options(['vector' => $catVector])
                     ->semantic(),
             );
@@ -473,7 +473,7 @@ class TypesenseSearchableTest extends IntegrationTestCase
             $this->assertSame('1', $results['hits'][0]['document']['id']);
 
             $results = $engine->search(
-                (new Builder($table, 'rocket'))
+                new Builder($table, 'rocket')
                     ->options(['vector' => $rocketVector])
                     ->hybrid(),
             );

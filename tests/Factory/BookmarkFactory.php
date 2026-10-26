@@ -49,7 +49,7 @@ class BookmarkFactory extends BaseFactory
      * @param int $n Number of chirps
      * @return $this
      */
-    public function withChirp(mixed $parameter = null, int $n = 1)
+    public function withChirp(mixed $parameter = null, int $n = 1): static
     {
         return $this->with('Chirps', ChirpFactory::new($parameter ?? [], $n));
     }

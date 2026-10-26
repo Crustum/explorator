@@ -5,6 +5,7 @@ on:
     branches:
       - 'main'
       - '1.x'
+      - '2.x'
   pull_request:
     branches:
       - '*'
@@ -20,19 +21,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - php-version: '8.4'
+          - php-version: '8.5'
             db-type: 'mysql'
             dependencies: lowest
             quote-identifiers: 'false'
-          - php-version: '8.4'
+          - php-version: '8.5'
             db-type: 'mysql'
             dependencies: highest
             quote-identifiers: 'false'
-          - php-version: '8.4'
+          - php-version: '8.5'
             db-type: 'pgsql'
             dependencies: highest
             quote-identifiers: 'false'
-          - php-version: '8.4'
+          - php-version: '8.5'
             db-type: 'sqlite'
             dependencies: highest
             quote-identifiers: 'false'
@@ -41,25 +42,13 @@ jobs:
             dependencies: highest
             quote-identifiers: 'true'
           - php-version: '8.5'
-            db-type: 'mysql'
-            dependencies: highest
-            quote-identifiers: 'false'
-          - php-version: '8.5'
             db-type: 'pgsql'
-            dependencies: highest
-            quote-identifiers: 'true'
-          - php-version: '8.5'
-            db-type: 'pgsql'
-            dependencies: highest
-            quote-identifiers: 'false'
-          - php-version: '8.5'
-            db-type: 'sqlite'
             dependencies: highest
             quote-identifiers: 'true'
           - php-version: '8.5'
             db-type: 'sqlite'
             dependencies: highest
-            quote-identifiers: 'false'
+            quote-identifiers: 'true'
 
     services:
       mysql:
@@ -126,11 +115,11 @@ jobs:
         fi
 
     - name: Setup problem matchers for PHPUnit
-      if: matrix.php-version == '8.4' && matrix.db-type == 'mysql'
+      if: matrix.php-version == '8.5' && matrix.db-type == 'mysql'
       run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
     - name: Run PHPUnit with coverage
-      if: matrix.php-version == '8.4' && matrix.db-type == 'mysql'
+      if: matrix.php-version == '8.5' && matrix.db-type == 'mysql'
       run: |
         export CODECOVERAGE=1
         export REDIS_HOST=localhost
@@ -142,7 +131,7 @@ jobs:
         vendor/bin/phpunit --configuration=phpunit.xml.dist --display-deprecations --display-incomplete --display-skipped --coverage-clover=coverage.xml
 
     - name: Run PHPUnit without coverage
-      if: matrix.php-version != '8.4' || matrix.db-type != 'mysql'
+      if: matrix.php-version != '8.5' || matrix.db-type != 'mysql'
       run: |
         export REDIS_HOST=localhost
         export REDIS_PORT=6379
@@ -153,7 +142,7 @@ jobs:
         vendor/bin/phpunit --configuration=phpunit.xml.dist
 
     - name: Submit code coverage
-      if: matrix.php-version == '8.4' && matrix.db-type == 'mysql'
+      if: matrix.php-version == '8.5' && matrix.db-type == 'mysql'
       uses: codecov/codecov-action@v3
 
   cs-stan:
@@ -166,7 +155,7 @@ jobs:
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.4'
+        php-version: '8.5'
         extensions: mbstring, intl
         coverage: none
 

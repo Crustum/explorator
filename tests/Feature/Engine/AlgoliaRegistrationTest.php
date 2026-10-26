@@ -24,7 +24,7 @@ class AlgoliaRegistrationTest extends FeatureTestCase
         }
 
         Configure::write('Explorator.algolia', ['id' => 'test', 'secret' => 'test']);
-        $engine = (new EngineManager())->engine('algolia');
+        $engine = new EngineManager()->engine('algolia');
         $this->assertInstanceOf(Algolia4Engine::class, $engine);
     }
 }

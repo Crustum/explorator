@@ -545,7 +545,7 @@ class DatabaseEngine extends Engine implements SupportsSemanticSearch
 
         $columns = [];
 
-        foreach ((new ReflectionMethod($entityClass, 'toSearchableArray'))->getAttributes() as $attribute) {
+        foreach (new ReflectionMethod($entityClass, 'toSearchableArray')->getAttributes() as $attribute) {
             if ($attribute->getName() !== $attributeClass) {
                 continue;
             }
@@ -575,7 +575,7 @@ class DatabaseEngine extends Engine implements SupportsSemanticSearch
 
         $options = [];
 
-        foreach ((new ReflectionMethod($entityClass, 'toSearchableArray'))->getAttributes(SearchUsingFullText::class) as $attribute) {
+        foreach (new ReflectionMethod($entityClass, 'toSearchableArray')->getAttributes(SearchUsingFullText::class) as $attribute) {
             $arguments = $attribute->getArguments();
             $value = $arguments['options'] ?? $arguments[1] ?? [];
             if (is_array($value)) {

@@ -74,7 +74,7 @@ class MakeSearchableTest extends FeatureTestCase
         $message->shouldReceive('getArgument')->with('source', '')->andReturn('SearchableUsers');
         $message->shouldReceive('getArgument')->with('ids', [])->andReturn([$entity->id]);
 
-        $this->assertSame(Processor::ACK, (new MakeSearchableJob())->execute($message));
+        $this->assertSame(Processor::ACK, new MakeSearchableJob()->execute($message));
     }
 
     /**
@@ -86,7 +86,7 @@ class MakeSearchableTest extends FeatureTestCase
         $message->shouldReceive('getArgument')->with('source', '')->andReturn('SearchableUsers');
         $message->shouldReceive('getArgument')->with('ids', [])->andReturn([]);
 
-        $this->assertSame(Processor::ACK, (new MakeSearchableJob())->execute($message));
+        $this->assertSame(Processor::ACK, new MakeSearchableJob()->execute($message));
     }
 
     /**

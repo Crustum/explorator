@@ -5,6 +5,7 @@ namespace TestApp\Model\Entity;
 
 use Cake\ORM\Entity;
 use Crustum\Explorator\Model\Trait\SearchableEntityTrait;
+use Override;
 
 /**
  * Bookmark entity joined to chirps for database engine search (workbench Bookmark).
@@ -14,9 +15,10 @@ class Bookmark extends Entity
     use SearchableEntityTrait;
 
     /**
-     * @var list<string>
+     * @var array<string, bool>
      */
-    protected array $_accessible = [
+    #[Override]
+    protected array $patchable = [
         '*' => true,
         'id' => false,
     ];

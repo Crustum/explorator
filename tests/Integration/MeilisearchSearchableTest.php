@@ -50,7 +50,7 @@ class MeilisearchSearchableTest extends IntegrationTestCase
 
         $this->setUpSearchableSuite();
 
-        $engine = (new EngineManager())->engine('meilisearch');
+        $engine = new EngineManager()->engine('meilisearch');
         try {
             $engine->health();
         } catch (Throwable $throwable) {
@@ -359,7 +359,7 @@ class MeilisearchSearchableTest extends IntegrationTestCase
             'created' => new DateTime(),
         ]));
 
-        $engine = (new EngineManager())->engine($this->exploratorDriver());
+        $engine = new EngineManager()->engine($this->exploratorDriver());
         if (method_exists($engine, 'flush')) {
             $engine->flush($this->SearchableUsers);
         }
@@ -443,7 +443,7 @@ class MeilisearchSearchableTest extends IntegrationTestCase
             $engine->update([$cat, $rocket]);
 
             $results = $engine->search(
-                (new Builder($this->SearchableUsers, 'a relaxed pet'))
+                new Builder($this->SearchableUsers, 'a relaxed pet')
                     ->options(['vector' => [1, 0]])
                     ->semantic(),
             );

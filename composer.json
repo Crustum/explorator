@@ -18,32 +18,30 @@
         }
     ],
     "require": {
-        "php": ">=8.2",
-        "cakephp/cakephp": "^5.3",
-        "cakephp/queue": "^2.3",
+        "php": ">=8.5",
+        "cakephp/cakephp": "6.x-dev",
+        "cakephp/queue": "4.x-dev",
         "symfony/polyfill-php84": "^1.31"
     },
     "require-dev": {
-        "crustum/plugin-manifest": "^1.2",
+        "crustum/plugin-manifest": "2.x-dev",
         "algolia/algoliasearch-client-php": "^4.14",
-        "cakedc/cakephp-phpstan": "^4.3",
-        "cakephp/bake": "^3.0",
-        "phpunit/phpunit": "^11.1.3 || ^12.5.0 || ^13.0",
-        "crustum/cakephp-ai": "^2.0",
-        "crustum/essentia": "^1.0",
-        "cakephp/cakephp-codesniffer": "^5.0",
+        "cakedc/cakephp-phpstan": "5.next-cake6-dev",
+        "cakephp/bake": "4.x-dev",
+        "phpunit/phpunit": "^13.0",
+        "cakephp/cakephp-codesniffer": "6.x-dev",
         "fakerphp/faker": "^1.24.1",
         "guzzlehttp/guzzle": "^7.15.1",
         "nyholm/psr7": "^1.8.2",
-        "phpstan/phpstan": "^2.2.2,<2.2.6",
+        "phpstan/phpstan": "^2.3",
         "queue-interop/queue-interop": "^0.8.2",
-        "rector/rector": "^2.5",
+        "rector/rector": "^2.7",
         "meilisearch/meilisearch-php": "^1.17",
         "mockery/mockery": "^1.6.15",
         "typesense/typesense-php": "^4.9.3",
         "symfony/config": "^7.4 | ^8.0",
         "symfony/routing": "^7.4 | ^8.0",
-        "dereuromark/cakephp-fixture-factories": "^2.0"
+        "dereuromark/cakephp-fixture-factories": "cake6-dev"
     },
     "suggest": {
         "crustum/plugin-manifest": "CakePHP plugin installer",
@@ -105,5 +103,11 @@
             "php-http/discovery": false
         },
         "platform-check": false
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@github.com:skie/cakephp-queue.git"
+        }
+    ]
 }

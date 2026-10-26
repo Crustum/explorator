@@ -912,9 +912,7 @@ class TypesenseEngine extends Engine implements SupportsSemanticSearch
             $schema = $table->typesenseCollectionSchema();
         }
 
-        if (!isset($schema['name'])) {
-            $schema['name'] = $collectionName;
-        }
+        $schema['name'] ??= $collectionName;
 
         try {
             $this->typesense->getCollections()->create($schema);

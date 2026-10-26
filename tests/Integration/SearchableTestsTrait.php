@@ -331,7 +331,7 @@ trait SearchableTestsTrait
             'created' => new DateTime(),
         ]));
 
-        $engine = (new EngineManager())->engine($this->exploratorDriver());
+        $engine = new EngineManager()->engine($this->exploratorDriver());
         if (method_exists($engine, 'flush')) {
             $engine->flush($this->SearchableUsers);
         }

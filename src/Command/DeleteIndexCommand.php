@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator\Command;
 
-use Cake\Console\Arguments;
-use Cake\Console\ConsoleIo;
 use Cake\Console\ConsoleOptionParser;
 use Crustum\Explorator\EngineManager;
 use Override;
@@ -52,11 +50,11 @@ class DeleteIndexCommand extends ExploratorCommand
      * @inheritDoc
      */
     #[Override]
-    public function execute(Arguments $args, ConsoleIo $io): ?int
+    public function execute(): ?int
     {
-        $name = (string)$args->getArgument('name');
-        (new EngineManager())->engine()->deleteIndex($name);
-        $io->success(sprintf('Index [%s] deleted.', $name));
+        $name = (string)$this->args->getArgument('name');
+        new EngineManager()->engine()->deleteIndex($name);
+        $this->io->success(sprintf('Index [%s] deleted.', $name));
 
         return static::CODE_SUCCESS;
     }

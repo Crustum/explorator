@@ -748,7 +748,7 @@ class MeilisearchEngineTest extends FeatureTestCase
         $this->client->shouldReceive('index')->once()->with('users')->andReturn($index = m::mock(Indexes::class));
         $index->shouldReceive('rawSearch')->once()->with('conceptual query', m::on(fn($parameters): bool => $parameters === $expected))->andReturn(['hits' => []]);
 
-        $builder = (new Builder($this->SearchableUsers, 'conceptual query'))
+        $builder = new Builder($this->SearchableUsers, 'conceptual query')
             ->semantic(minSimilarity: 0)
             ->where('status', 'published')
             ->take(10);
@@ -775,7 +775,7 @@ class MeilisearchEngineTest extends FeatureTestCase
         $this->client->shouldReceive('index')->once()->with('users')->andReturn($index = m::mock(Indexes::class));
         $index->shouldReceive('rawSearch')->once()->with('conceptual query', m::on(fn($parameters): bool => $parameters === $expected))->andReturn(['hits' => []]);
 
-        $builder = (new Builder($this->SearchableUsers, 'conceptual query'))
+        $builder = new Builder($this->SearchableUsers, 'conceptual query')
             ->semantic()
             ->take(10);
 
@@ -804,7 +804,7 @@ class MeilisearchEngineTest extends FeatureTestCase
             ],
         ]))->andReturn(['hits' => []]);
 
-        $builder = (new Builder($this->SearchableUsers, 'combined query'))
+        $builder = new Builder($this->SearchableUsers, 'combined query')
             ->options(['vector' => [0.4, 0.6]])
             ->hybrid(textWeight: 1, semanticWeight: 2);
 
@@ -820,7 +820,7 @@ class MeilisearchEngineTest extends FeatureTestCase
     {
         $engine = $this->embeddingsEngine(['driver' => 'foo']);
 
-        $builder = (new Builder($this->SearchableUsers, 'conceptual query'))->semantic();
+        $builder = new Builder($this->SearchableUsers, 'conceptual query')->semantic();
 
         $this->expectException(ExploratorException::class);
         $this->expectExceptionMessage('The [foo] Meilisearch embedding driver is not supported.');
@@ -847,7 +847,7 @@ class MeilisearchEngineTest extends FeatureTestCase
             'rankingScoreThreshold' => 0.5,
         ]))->andReturn(['hits' => []]);
 
-        $builder = (new Builder($this->SearchableUsers, 'combined query'))
+        $builder = new Builder($this->SearchableUsers, 'combined query')
             ->options(['vector' => [0.4, 0.6]])
             ->hybrid(textWeight: 1, semanticWeight: 2, minSimilarity: 0.5);
 

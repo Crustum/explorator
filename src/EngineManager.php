@@ -72,7 +72,7 @@ class EngineManager
      * @param callable(): \Crustum\Explorator\Engine\Engine $callback Creator
      * @return $this
      */
-    public function extend(string $driver, callable $callback)
+    public function extend(string $driver, callable $callback): static
     {
         $this->customCreators[$driver] = $callback;
 
@@ -84,7 +84,7 @@ class EngineManager
      *
      * @return $this
      */
-    public function forgetEngines()
+    public function forgetEngines(): static
     {
         $this->drivers = [];
 

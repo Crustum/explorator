@@ -84,7 +84,7 @@ class MakeRangeSearchableTest extends FeatureTestCase
         $message->shouldReceive('getArgument')->with('queue', '')->andReturn($queue);
         $message->shouldReceive('getArgument')->with('connection', '')->andReturn($connection);
 
-        return (new MakeRangeSearchableJob())->execute($message);
+        return new MakeRangeSearchableJob()->execute($message);
     }
 
     /**
@@ -97,7 +97,7 @@ class MakeRangeSearchableTest extends FeatureTestCase
         $message->shouldReceive('getArgument')->with('start', 0)->andReturn(0);
         $message->shouldReceive('getArgument')->with('end', 0)->andReturn(0);
 
-        $this->assertSame(Processor::ACK, (new MakeRangeSearchableJob())->execute($message));
+        $this->assertSame(Processor::ACK, new MakeRangeSearchableJob()->execute($message));
         $this->assertNoJobsQueued();
     }
 

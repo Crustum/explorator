@@ -19,7 +19,7 @@ class SoftDeleteBehavior extends Behavior
     /**
      * @var array<string, mixed>
      */
-    protected array $_defaultConfig = [
+    protected array $defaultConfig = [
         'field' => 'deleted',
         'implementedFinders' => [
             'withTrashed' => 'findWithTrashed',
@@ -149,7 +149,7 @@ class SoftDeleteBehavior extends Behavior
     public function restore(EntityInterface $entity): EntityInterface|false
     {
         $field = (string)$this->getConfig('field');
-        $entity->set($field);
+        $entity->set($field, null);
         $result = $this->table()->save($entity);
 
         if ($result) {

@@ -39,7 +39,7 @@ class AlgoliaSearchableTest extends IntegrationTestCase
 
         $this->setUpSearchableSuite();
 
-        $engine = (new EngineManager())->engine('algolia');
+        $engine = new EngineManager()->engine('algolia');
         $indexName = $this->SearchableUsers->searchableAs();
         try {
             $engine->deleteIndex($indexName);

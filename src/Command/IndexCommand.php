@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Crustum\Explorator\Command;
 
-use Cake\Console\Arguments;
-use Cake\Console\ConsoleIo;
 use Cake\Console\ConsoleOptionParser;
 use Crustum\Explorator\EngineManager;
 use Override;
@@ -56,17 +54,17 @@ class IndexCommand extends ExploratorCommand
      * @inheritDoc
      */
     #[Override]
-    public function execute(Arguments $args, ConsoleIo $io): ?int
+    public function execute(): ?int
     {
-        $name = (string)$args->getArgument('name');
+        $name = (string)$this->args->getArgument('name');
         $options = [];
-        $key = $args->getOption('key');
+        $key = $this->args->getOption('key');
         if (is_string($key) && $key !== '') {
             $options['primaryKey'] = $key;
         }
 
-        (new EngineManager())->engine()->createIndex($name, $options);
-        $io->success(sprintf('Index [%s] created.', $name));
+        new EngineManager()->engine()->createIndex($name, $options);
+        $this->io->success(sprintf('Index [%s] created.', $name));
 
         return static::CODE_SUCCESS;
     }

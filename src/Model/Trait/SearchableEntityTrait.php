@@ -35,7 +35,7 @@ trait SearchableEntityTrait
      * @param string $field Soft-delete column name
      * @return $this
      */
-    public function pushSoftDeleteMetadata(string $field = 'deleted')
+    public function pushSoftDeleteMetadata(string $field = 'deleted'): static
     {
         return $this->withExploratorMetadata('__soft_deleted', $this->get($field) !== null ? 1 : 0);
     }
@@ -53,7 +53,7 @@ trait SearchableEntityTrait
      * @param mixed $value Metadata value
      * @return $this
      */
-    public function withExploratorMetadata(string $key, mixed $value)
+    public function withExploratorMetadata(string $key, mixed $value): static
     {
         $this->exploratorMetadata[$key] = $value;
 

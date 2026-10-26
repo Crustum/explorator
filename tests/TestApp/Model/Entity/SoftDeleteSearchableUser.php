@@ -48,7 +48,7 @@ class SoftDeleteSearchableUser extends SearchableUser
      * @param \Cake\I18n\DateTime|null $value Published at
      * @return $this
      */
-    public function markPublished(?DateTime $value = null)
+    public function markPublished(?DateTime $value = null): static
     {
         $this->set('published_at', $value ?? new DateTime());
 

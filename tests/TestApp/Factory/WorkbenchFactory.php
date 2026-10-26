@@ -53,9 +53,7 @@ final class WorkbenchFactory
      */
     public static function bookmark(array $data = [], ?array $chirpData = null): EntityInterface
     {
-        if (!isset($data['chirp_id'])) {
-            $data['chirp_id'] = self::chirp($chirpData ?? [])->id;
-        }
+        $data['chirp_id'] ??= self::chirp($chirpData ?? [])->id;
 
         $table = self::bookmarksTable();
         $entity = $table->newEntity(array_merge([

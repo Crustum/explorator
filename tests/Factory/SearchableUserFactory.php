@@ -40,7 +40,7 @@ class SearchableUserFactory extends BaseFactory
      *
      * @return $this
      */
-    public function unverified()
+    public function unverified(): static
     {
         return $this->state([
             'email' => $this->getGenerator()->unique()->userName() . '@unverified.test',

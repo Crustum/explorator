@@ -67,10 +67,10 @@ class TestEngineTest extends FeatureTestCase
      */
     public function testCreateTestDriverResolvesTestEngine(): void
     {
-        $engine = (new EngineManager())->engine();
+        $engine = new EngineManager()->engine();
 
         $this->assertInstanceOf(TestEngine::class, $engine);
-        $this->assertInstanceOf(TestEngine::class, (new EngineManager())->engine('test'));
+        $this->assertInstanceOf(TestEngine::class, new EngineManager()->engine('test'));
     }
 
     /**
@@ -79,7 +79,7 @@ class TestEngineTest extends FeatureTestCase
     public function testUpdateCapturesOperation(): void
     {
         $entity = $this->makeUser(123, 'Grace');
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$entity]);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([$entity]);
 
         $operations = TestEngine::getOperations();
 
@@ -97,7 +97,7 @@ class TestEngineTest extends FeatureTestCase
     public function testDeleteCapturesOperation(): void
     {
         $entity = $this->makeUser(4);
-        (new SearchableIndexer(new EngineManager()))->removeFromSearchSync([$entity]);
+        new SearchableIndexer(new EngineManager())->removeFromSearchSync([$entity]);
 
         $operations = TestEngine::getOperations();
 
@@ -125,7 +125,7 @@ class TestEngineTest extends FeatureTestCase
      */
     public function testClearOperations(): void
     {
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$this->makeUser(1)]);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([$this->makeUser(1)]);
 
         $this->assertCount(1, TestEngine::getOperations());
 
@@ -182,7 +182,7 @@ class TestEngineTest extends FeatureTestCase
     public function testFlushCapturesOperation(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        (new EngineManager())->engine()->flush($table);
+        new EngineManager()->engine()->flush($table);
 
         $operations = TestEngine::getOperations();
 
@@ -197,8 +197,8 @@ class TestEngineTest extends FeatureTestCase
     public function testSearchAndPaginateAreCaptured(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        $builder = (new Builder($table, 'example'))->where('age', '>', 20);
-        $engine = (new EngineManager())->engine();
+        $builder = new Builder($table, 'example')->where('age', '>', 20);
+        $engine = new EngineManager()->engine();
         $engine->search($builder);
         $engine->paginate($builder, 15, 1);
 
@@ -218,9 +218,9 @@ class TestEngineTest extends FeatureTestCase
     public function testGetWritesExcludesSearches(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        $engine = (new EngineManager())->engine();
+        $engine = new EngineManager()->engine();
         $engine->search(new Builder($table, 'q'));
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync([$this->makeUser(1)]);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync([$this->makeUser(1)]);
         $engine->flush($table);
 
         $this->assertCount(2, TestEngine::getWrites());
@@ -236,7 +236,7 @@ class TestEngineTest extends FeatureTestCase
     public function testSetSearchResultsStubsRawHits(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        $engine = (new EngineManager())->engine();
+        $engine = new EngineManager()->engine();
 
         TestEngine::setSearchResults([
             ['id' => 7, 'name' => 'Ada', '_rankingScore' => 0.9],
@@ -260,7 +260,7 @@ class TestEngineTest extends FeatureTestCase
     public function testClearSearchResultsResetsStub(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        $engine = (new EngineManager())->engine();
+        $engine = new EngineManager()->engine();
 
         TestEngine::setSearchResults([['id' => 1, 'name' => 'Ada']]);
         TestEngine::clearSearchResults();
@@ -277,7 +277,7 @@ class TestEngineTest extends FeatureTestCase
     public function testSearchInvokesBuilderCallbackWithStubbedIndex(): void
     {
         $table = $this->getTableLocator()->get('SearchableUsers');
-        $engine = (new EngineManager())->engine();
+        $engine = new EngineManager()->engine();
 
         TestEngine::setSearchResults([
             ['id' => 7, 'name' => 'Ada'],
@@ -304,7 +304,7 @@ class TestEngineTest extends FeatureTestCase
      */
     public function testEmptyUpdateDoesNotCapture(): void
     {
-        (new EngineManager())->engine()->update([]);
+        new EngineManager()->engine()->update([]);
 
         $this->assertSame([], TestEngine::getOperations());
     }
@@ -315,7 +315,7 @@ class TestEngineTest extends FeatureTestCase
     public function testFlushAcceptsPlainTable(): void
     {
         $table = new Table(['alias' => 'DummyIndex']);
-        (new EngineManager())->engine()->flush($table);
+        new EngineManager()->engine()->flush($table);
 
         $operations = TestEngine::getOperations();
 
@@ -332,7 +332,7 @@ class TestEngineTest extends FeatureTestCase
             $this->makeUser(1, 'One'),
             $this->makeUser(2, 'Two'),
         ];
-        (new SearchableIndexer(new EngineManager()))->makeSearchableSync($entities);
+        new SearchableIndexer(new EngineManager())->makeSearchableSync($entities);
 
         $operations = TestEngine::getOperations();
 

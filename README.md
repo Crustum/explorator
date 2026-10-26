@@ -4,7 +4,7 @@ The **Explorator** plugin provides driver-based full-text search for CakePHP app
 
 ## Requirements
 
-* PHP 8.2+
+* PHP 8.5+
 
 Optional engine clients are listed under Composer `suggest`.
 

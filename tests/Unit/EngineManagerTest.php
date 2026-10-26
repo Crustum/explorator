@@ -90,6 +90,6 @@ class EngineManagerTest extends TestCase
     public function testUnknownDriverThrows(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        (new EngineManager())->engine('missing-driver');
+        new EngineManager()->engine('missing-driver');
     }
 }
