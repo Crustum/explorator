@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.0] - 2026-10-26
+
+### Changed
+
+- Plugin manifest is now optional: `crustum/plugin-manifest` moved from `require` to `require-dev` (`^1.2`); install assets live in `src/Manifest/ExploratorManifest.php` (discovered via `ManifestResolver`), and `ExploratorPlugin` no longer implements `ManifestInterface`.
+- Queued-import routing: `MakeRangeSearchableJob` forwards `queue`/`connection` message args to the child `MakeSearchable` push (`queue`/`config` options) with `syncWithSearchUsingQueue()`/`syncWithSearchUsing()` fallbacks; `QueueImportCommand` resolves `--queue` (fallback to model default) plus model connection into push options and message args.
+
+### Fixed
+
+- Meilisearch: escape double quotes/backslashes in `where` filters and `whereIn`/`whereNotIn` lists.
+- Typesense: create missing collections under the indexable name instead of `searchableAs`.
+
 ## [1.0.0]
 
 ### Added

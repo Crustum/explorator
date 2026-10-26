@@ -23,6 +23,12 @@ class DatabaseEngineSemanticTest extends FeatureTestCase
             $this->markTestSkipped('Database engine not available');
         }
 
+        $driver = ConnectionManager::get('test')->getDriver();
+        $this->skipIf(
+            str_contains($driver::class, 'Postgres'),
+            'Postgres supports vector search at the driver level.',
+        );
+
         $engine = new DatabaseEngine();
 
         $table = new SearchableUsersTable([
