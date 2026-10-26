@@ -913,7 +913,7 @@ class TypesenseEngine extends Engine implements SupportsSemanticSearch
         }
 
         if (!isset($schema['name'])) {
-            $schema['name'] = $this->indexName($table);
+            $schema['name'] = $collectionName;
         }
 
         try {

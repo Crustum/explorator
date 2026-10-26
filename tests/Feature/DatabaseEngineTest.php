@@ -423,7 +423,7 @@ class DatabaseEngineTest extends FeatureTestCase
     }
 
     /**
-     * Custom pageName is accepted but unused (Cake PaginatedResultSet has no Illuminate url()).
+     * Custom pageName is accepted but unused (Cake PaginatedResultSet builds no page urls).
      *
      * @return void
      */

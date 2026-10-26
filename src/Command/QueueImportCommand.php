@@ -111,18 +111,30 @@ class QueueImportCommand extends ExploratorCommand
             }
         }
 
+        $queueOption = $args->getOption('queue');
+        $queue = is_string($queueOption) && $queueOption !== ''
+            ? $queueOption
+            : (method_exists($table, 'syncWithSearchUsingQueue') ? $table->syncWithSearchUsingQueue() : null);
+        $connection = method_exists($table, 'syncWithSearchUsing') ? $table->syncWithSearchUsing() : null;
+
         $pushOptions = [];
-        $queue = $args->getOption('queue');
+        $messageArgs = [];
         if (is_string($queue) && $queue !== '') {
             $pushOptions['queue'] = $queue;
+            $messageArgs['queue'] = $queue;
+        }
+
+        if (is_string($connection) && $connection !== '') {
+            $pushOptions['config'] = $connection;
+            $messageArgs['connection'] = $connection;
         }
 
         foreach ($ranges as [$start, $end]) {
-            Explorator::push(MakeRangeSearchableJob::class, [
+            Explorator::push(MakeRangeSearchableJob::class, array_merge([
                 'source' => $alias,
                 'start' => $start,
                 'end' => $end,
-            ], $pushOptions);
+            ], $messageArgs), $pushOptions);
             $direction = $order === 'asc' ? 'up to' : 'down to';
             $io->out(sprintf('Queued [%s] models %s ID: %d', $alias, $direction, $order === 'asc' ? $end : $start));
         }

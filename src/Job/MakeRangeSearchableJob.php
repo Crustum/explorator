@@ -51,10 +51,29 @@ class MakeRangeSearchableJob implements JobInterface
             return Processor::ACK;
         }
 
+        $options = [];
+        $queue = $message->getArgument('queue', '');
+        if (!is_string($queue) || $queue === '') {
+            $queue = method_exists($table, 'syncWithSearchUsingQueue') ? $table->syncWithSearchUsingQueue() : null;
+        }
+
+        if (is_string($queue) && $queue !== '') {
+            $options['queue'] = $queue;
+        }
+
+        $connection = $message->getArgument('connection', '');
+        if (!is_string($connection) || $connection === '') {
+            $connection = method_exists($table, 'syncWithSearchUsing') ? $table->syncWithSearchUsing() : null;
+        }
+
+        if (is_string($connection) && $connection !== '') {
+            $options['config'] = $connection;
+        }
+
         Explorator::push(Explorator::$makeSearchableJob, [
             'source' => $source,
             'ids' => $ids,
-        ]);
+        ], $options);
 
         return Processor::ACK;
     }

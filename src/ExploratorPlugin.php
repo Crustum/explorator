@@ -11,19 +11,13 @@ use Cake\Http\MiddlewareQueue;
 use Crustum\Explorator\Engine\CollectionEngine;
 use Crustum\Explorator\Engine\DatabaseEngine;
 use Crustum\Explorator\Engine\NullEngine;
-use Crustum\PluginManifest\Manifest\ManifestInterface;
-use Crustum\PluginManifest\Manifest\ManifestTrait;
 use Override;
 
 /**
  * CakePHP Explorator plugin — driver-based search for Tables and Entities.
- *
- * @uses \Crustum\PluginManifest\Manifest\ManifestTrait
  */
-class ExploratorPlugin extends BasePlugin implements ManifestInterface
+class ExploratorPlugin extends BasePlugin
 {
-    use ManifestTrait;
-
     /**
      * Plugin name.
      *
@@ -105,28 +99,5 @@ class ExploratorPlugin extends BasePlugin implements ManifestInterface
     public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
     {
         return $middlewareQueue;
-    }
-
-    /**
-     * Get the manifest for the plugin.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public static function manifest(): array
-    {
-        $pluginPath = dirname(__DIR__);
-
-        return array_merge(
-            static::manifestConfig(
-                $pluginPath . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'explorator.php',
-                CONFIG . 'explorator.php',
-                false,
-            ),
-            static::manifestBootstrapAppend(
-                "if (file_exists(CONFIG . 'explorator.php')) {\n    Configure::load('explorator', 'default');\n}",
-                '// Explorator Plugin Configuration',
-            ),
-            static::manifestStarRepo('Crustum/explorator'),
-        );
     }
 }

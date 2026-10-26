@@ -344,7 +344,7 @@ class MeilisearchEngine extends Engine implements SupportsSemanticSearch, Update
 
             $parts[] = is_numeric($value)
                 ? sprintf('%s%s%s', $field, $operator, $value)
-                : sprintf('%s%s"%s"', $field, $operator, $value);
+                : sprintf('%s%s"%s"', $field, $operator, addcslashes((string)$value, '"\\'));
         }
 
         foreach ($builder->whereIns as $key => $values) {
@@ -373,7 +373,7 @@ class MeilisearchEngine extends Engine implements SupportsSemanticSearch, Update
 
             $formatted[] = filter_var($value, FILTER_VALIDATE_INT) !== false
                 ? (string)$value
-                : sprintf('"%s"', $value);
+                : sprintf('"%s"', addcslashes((string)$value, '"\\'));
         }
 
         return implode(', ', $formatted);
