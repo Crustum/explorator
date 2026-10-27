@@ -19,8 +19,8 @@
     ],
     "require": {
         "php": ">=8.2",
-        "cakephp/cakephp": "^5.3",
-        "cakephp/queue": "^2.3",
+        "cakephp/cakephp": "^5.4",
+        "cakephp/queue": "^2.3|3.x-dev",
         "symfony/polyfill-php84": "^1.31"
     },
     "require-dev": {

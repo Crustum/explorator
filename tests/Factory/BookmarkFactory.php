@@ -47,9 +47,9 @@ class BookmarkFactory extends BaseFactory
      *
      * @param mixed $parameter Association data
      * @param int $n Number of chirps
-     * @return $this
+     * @return \CakephpFixtureFactories\Factory\BaseFactory
      */
-    public function withChirp(mixed $parameter = null, int $n = 1)
+    public function withChirp(mixed $parameter = null, int $n = 1): BaseFactory
     {
         return $this->with('Chirps', ChirpFactory::new($parameter ?? [], $n));
     }

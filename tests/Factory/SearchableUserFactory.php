@@ -38,9 +38,9 @@ class SearchableUserFactory extends BaseFactory
     /**
      * Unverified-style email domain used by Integration SearchableTests.
      *
-     * @return $this
+     * @return \CakephpFixtureFactories\Factory\BaseFactory
      */
-    public function unverified()
+    public function unverified(): BaseFactory
     {
         return $this->state([
             'email' => $this->getGenerator()->unique()->userName() . '@unverified.test',
